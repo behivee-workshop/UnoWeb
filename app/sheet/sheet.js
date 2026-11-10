@@ -1,161 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Keybench — Sheet</title>
-<link rel="stylesheet" href="shared.css">
-<style>
-  /* ================= Sheet-only: transport, track tabs, step grid ================= */
-  .transport {
-    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
-    background:var(--surface-raised); border:1px solid var(--border); border-radius:6px; padding:10px 14px;
-  }
-  .tbtn {
-    background:var(--bg); border:1px solid var(--border); border-radius:9999px; width:36px; height:36px;
-    display:flex; align-items:center; justify-content:center; color:var(--text);
-  }
-  .tbtn.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
-  .tbtn .icon.play { margin-left:2px; } /* optically center the play triangle */
-
-  .rec-btn { color:var(--rec); opacity:.55; }
-  .rec-btn[aria-pressed="true"] { opacity:1; animation: recpulse 1s ease-in-out infinite; }
-  .rec-btn .icon { fill:currentColor; }
-  @keyframes recpulse { 0%,100%{ box-shadow:0 0 0 0 rgba(198,8,8,.35);} 50%{ box-shadow:0 0 0 6px rgba(198,8,8,0);} }
-
-  .track-tabs { display:flex; gap:8px; flex-wrap:wrap; }
-  .track-tab {
-    display:flex; align-items:center; gap:7px; padding:8px 10px; border-radius:9999px;
-    border:1px solid var(--border); background:var(--surface-raised); cursor:pointer; transition:opacity .2s ease;
-    color:var(--text);
-  }
-  .track-tab.muted { opacity:.5; }
-  .track-tab[aria-selected="true"] { border-color: var(--track-color); background: color-mix(in srgb, var(--track-color) 14%, var(--surface-raised)); }
-  .track-tab[aria-selected="true"] small { color: var(--text); }
-  .track-tab .swatch { width:9px; height:9px; border-radius:50%; background:var(--track-color); flex:0 0 auto; }
-  .track-tab b { font-size:12px; color:var(--text); font-weight:600; }
-  .track-tab small { font-family:var(--font-mono); font-size:12px; color:var(--text-muted); margin-left:1px; }
-  .mute-btn {
-    width:22px; height:22px; border-radius:9999px; border:1px solid var(--border); background:var(--bg);
-    color:var(--text-muted); flex:0 0 auto; display:flex; align-items:center; justify-content:center;
-  }
-  .mute-btn .icon { width:12px; height:12px; }
-  .mute-btn[aria-pressed="true"] { background:var(--mute-active); color:#fff; border-color:var(--mute-active); }
-
-  .grid-settings { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-
-  .roll-stepscol { display:flex; flex-direction:column; width:max-content; }
-  .roll-steps { height:28px; flex:0 0 28px; display:flex; align-items:center; gap:2px; padding:0 4px; border-bottom:1px solid var(--border); }
-  .step {
-    width:24px; height:22px; border-radius:3px; border:1px solid var(--border);
-    background: var(--bg); position:relative; flex:0 0 auto;
-  }
-  .step.group { border-left:1px solid color-mix(in srgb, var(--border) 60%, transparent); }
-  .step.active { background: color-mix(in srgb, var(--track-color) var(--vel-pct, 72%), var(--bg)); border-color: var(--track-color); border-radius:3px; }
-  /* a stretched note merges its head..tail cells into one bar */
-  .step.active.note-head { border-top-right-radius:0; border-bottom-right-radius:0; }
-  .step.active.note-body { border-radius:0; border-left:none; }
-  .step.active.note-tail:not(.note-head) { border-top-left-radius:0; border-bottom-left-radius:0; border-left:none; }
-  .step.playhead { box-shadow: 0 0 0 2px var(--accent) inset; }
-  .step.just-recorded { animation: recFlash .35s ease; }
-  @keyframes recFlash { from { box-shadow:0 0 0 4px var(--rec); } to { box-shadow:0 0 0 0 transparent; } }
-
-  .note-handle { position:absolute; top:0; right:-4px; width:9px; height:100%; cursor:ew-resize; opacity:0; pointer-events:none; z-index:1; }
-  .step.note-tail .note-handle { opacity:1; pointer-events:auto; }
-  .note-handle::after {
-    content:""; position:absolute; right:2px; top:50%; width:2px; height:60%;
-    transform:translateY(-50%); background:rgba(255,255,255,.75); border-radius:1px;
-  }
-</style>
-</head>
-<body>
-
-<div class="chassis" id="chassis">
-  <div class="chassis-head">
-    <a class="wordmark" href="index.html"><b>Keybench</b><span>Sheet</span></a>
-    <div class="nav-controls">
-      <div class="metronome">
-        <button class="tbtn-sm" id="metroPlay" aria-pressed="false" aria-label="Metronome"></button>
-        <button class="tbtn-sm" id="bpmDown" aria-label="Decrease BPM"></button>
-        <span class="bpm-readout" id="bpmReadout">100</span>
-        <button class="tbtn-sm" id="bpmUp" aria-label="Increase BPM"></button>
-        <span class="beat-dot" id="beatDot"></span>
-      </div>
-      <button class="btn-pill quick-connect" id="quickConnectBtn"></button>
-      <button class="gear-btn" id="settingsBtn" aria-pressed="false" aria-label="MIDI settings">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/>
-          <circle cx="12" cy="12" r="3"/>
-        </svg>
-      </button>
-    </div>
-  </div>
-
-  <div class="screen">
-    <!-- SHEET -->
-    <section class="panel active" id="panelMain" role="tabpanel">
-      <div class="transport">
-        <button class="tbtn primary" id="playBtn" aria-label="Play"></button>
-        <button class="tbtn" id="stopBtn" aria-label="Stop"></button>
-        <button class="tbtn rec-btn" id="recBtn" aria-pressed="false" aria-label="Arm recording"></button>
-      </div>
-
-      <div class="track-tabs" role="tablist" aria-label="Tracks" id="trackTabs"></div>
-
-      <div class="grid-settings">
-        <div class="pill-group" role="group" aria-label="Bars" id="barsCtl">
-          <span class="pg-label">bars</span>
-          <button data-bars="1" aria-pressed="true">1</button>
-          <button data-bars="2" aria-pressed="false">2</button>
-          <button data-bars="3" aria-pressed="false">3</button>
-          <button data-bars="4" aria-pressed="false">4</button>
-        </div>
-        <div class="pill-group" aria-label="Bar page">
-          <button class="icon-btn" id="pagePrev" aria-label="Previous bar"></button>
-          <span class="pg-label" id="pageReadout">bar 1/1</span>
-          <button class="icon-btn" id="pageNext" aria-label="Next bar"></button>
-        </div>
-        <div class="pill-group" role="group" aria-label="Record quantize" id="qtzCtl">
-          <span class="pg-label">quantize</span>
-          <button data-qtz="4" aria-pressed="false">1/4</button>
-          <button data-qtz="8" aria-pressed="false">1/8</button>
-          <button data-qtz="16" aria-pressed="true">1/16</button>
-        </div>
-        <button class="btn-pill" id="clearTrackBtn">Clear track</button>
-      </div>
-
-      <div class="roll-scroll" id="seqRoll">
-        <div class="roll-keycol" id="seqPianoKeys"></div>
-        <div class="roll-stepscol" id="seqStepCols"></div>
-      </div>
-      <div class="key-hint">one bar at a time — each track keeps its own 1-4 bar length · draw notes on the grid · drag a note's right edge to stretch it, up/down for velocity · hold a key while armed to record its length</div>
-    </section>
-
-    <!-- DEVICE -->
-    <section class="panel" id="panelDevice" role="tabpanel">
-      <div class="settings-scroll">
-        <div class="settings-section">
-          <span class="settings-note" id="connectStatus">Not connected — your on-screen keyboard still works either way.</span>
-        </div>
-        <div class="settings-section">
-          <h3>Input — the connected controller</h3>
-          <div class="device-list" role="radiogroup" aria-label="MIDI input device" id="inputList"></div>
-        </div>
-        <div class="settings-section">
-          <h3>Output — where Sheet sends</h3>
-          <div class="device-list" role="radiogroup" aria-label="MIDI output device" id="outputList"></div>
-        </div>
-        <div class="settings-foot">
-          <button class="btn-pill" id="rescanBtn">Rescan devices</button>
-          <span class="settings-note">Real hardware shows up here once connected via the navbar. This needs a top-level page served over <code>localhost</code> or HTTPS, in a browser that supports the Web MIDI API (Chrome or Edge).</span>
-        </div>
-      </div>
-    </section>
-  </div>
-</div>
-
-<script src="shared.js"></script>
-<script>
 (function(){
   "use strict";
   const { iconSvg, RANGE, buildKeyColumn, centerOn, createDeviceManager, createMetronome } = window.KB;
@@ -166,17 +8,29 @@
     beatDot: document.getElementById('beatDot'),
   });
 
-  /* ---------------- device settings toggle (gear icon swaps the one center panel) ---------------- */
+  /* ---------------- device settings drawer ---------------- */
   const panelMain = document.getElementById('panelMain');
   const panelDevice = document.getElementById('panelDevice');
   const settingsBtn = document.getElementById('settingsBtn');
   let onDevice = false;
   settingsBtn.addEventListener('click', () => {
     onDevice = !onDevice;
-    panelMain.classList.toggle('active', !onDevice);
+    panelMain.inert = onDevice;
+    panelMain.setAttribute('aria-hidden', String(onDevice));
     panelDevice.classList.toggle('active', onDevice);
     settingsBtn.setAttribute('aria-pressed', String(onDevice));
+    settingsBtn.setAttribute('aria-expanded', String(onDevice));
   });
+  window.addEventListener('keydown', e => { if (e.key === 'Escape' && onDevice) settingsBtn.click(); });
+
+  const sheetHelpBtn = document.getElementById('sheetHelpBtn');
+  const sheetHelp = document.getElementById('sheetHelp');
+  function setSheetHelp(open){
+    sheetHelp.hidden = !open;
+    sheetHelpBtn.setAttribute('aria-expanded', String(open));
+  }
+  sheetHelpBtn.addEventListener('click', () => setSheetHelp(sheetHelp.hidden));
+  window.addEventListener('keydown', e => { if (e.key === 'Escape' && !sheetHelp.hidden) setSheetHelp(false); });
 
   /* ================= SHEET: a bar is 16 steps (always 1/16 resolution); each track keeps
      its own 1-4 bar length and loops independently (polymetric) — see ARCHITECTURE.md ================= */
@@ -202,13 +56,17 @@
   function barBounds(i){ const bar = Math.floor(i / BAR_STEPS); return { start: bar * BAR_STEPS, end: bar * BAR_STEPS + BAR_STEPS }; }
 
   const seqStepElsByMidi = new Map();
+  const selectedNotes = new Set(); // `${stepIndex}:${midi}` for heads in the current track
+  const noteKey = (index, midi) => index + ':' + midi;
+  const sequencePlayhead = document.createElement('div');
+  sequencePlayhead.className = 'sequence-playhead';
   (function buildStepColumns(){
     const container = document.getElementById('seqStepCols');
     RANGE.forEach(midi => {
-      const row = document.createElement('div'); row.className = 'roll-steps';
+      const row = document.createElement('div'); row.className = 'roll-steps' + (midi === 60 ? ' middle-c-row' : '');
       const arr = [];
       for (let col = 0; col < BAR_STEPS; col++) {
-        const s = document.createElement('div'); s.className = 'step' + (col % 4 === 0 ? ' group' : '');
+        const s = document.createElement('div'); s.className = 'step' + (col % 4 === 0 ? ' group' : col % 2 === 0 ? ' eighth' : ''); s.dataset.midi = midi; s.dataset.col = col;
         const handle = document.createElement('div'); handle.className = 'note-handle';
         s.appendChild(handle);
         s.addEventListener('pointerdown', e => { if (e.target !== handle) startCellPress(e, midi, col); });
@@ -218,32 +76,104 @@
       container.appendChild(row);
       seqStepElsByMidi.set(midi, arr);
     });
+    document.getElementById('seqRoll').appendChild(sequencePlayhead);
   })();
 
-  // click = toggle the note; drag vertically on an existing note = set its velocity (a hardware
-  // controller reports velocity from how hard a key is struck — clicked-in notes have no such
-  // signal, so this is how you shape them by hand)
+  // Click empty space to add a note. Click a note to select it, Shift-drag to select a group,
+  // and drag a selected note to move the selection through the current bar.
   function startCellPress(e, midi, col){
     e.preventDefault();
     const tr = currentTrack();
     const i = colToIndex(tr, col);
-    const existing = tr.steps[i].notes.find(n => n.midi === midi);
-    const startY = e.clientY, startVel = existing ? existing.vel : 100;
-    let dragged = false;
+    if (e.shiftKey) { startMarqueeSelection(e, midi, col); return; }
+    const headIdx = findNoteHead(tr, midi, i);
+    if (headIdx !== -1) {
+      if (e.altKey) {
+        const notes = tr.steps[headIdx].notes;
+        notes.splice(notes.findIndex(n => n.midi === midi), 1);
+        selectedNotes.delete(noteKey(headIdx, midi));
+        renderTrackGrid();
+      } else startNoteMove(e, midi, headIdx);
+      return;
+    }
+    tr.steps[i].notes.push({ midi, vel:100, len:1 });
+    selectedNotes.clear(); selectedNotes.add(noteKey(i, midi));
+    renderTrackGrid();
+  }
+
+  function startMarqueeSelection(e, midi, col){
+    const startMidi = midi, startCol = col;
+    function onUp(ev){
+      window.removeEventListener('pointerup', onUp);
+      const target = document.elementFromPoint(ev.clientX, ev.clientY)?.closest('.step');
+      const endMidi = target ? Number(target.dataset.midi) : startMidi;
+      const endCol = target ? Number(target.dataset.col) : startCol;
+      const minMidi = Math.min(startMidi, endMidi), maxMidi = Math.max(startMidi, endMidi);
+      const minCol = Math.min(startCol, endCol), maxCol = Math.max(startCol, endCol);
+      const tr = currentTrack();
+      selectedNotes.clear();
+      for (let local = minCol; local <= maxCol; local++) {
+        const index = colToIndex(tr, local);
+        tr.steps[index].notes.forEach(note => {
+          if (note.midi >= minMidi && note.midi <= maxMidi) selectedNotes.add(noteKey(index, note.midi));
+        });
+      }
+      renderTrackGrid();
+    }
+    window.addEventListener('pointerup', onUp);
+  }
+
+  function startNoteMove(e, midi, headIdx){
+    const tr = currentTrack();
+    const key = noteKey(headIdx, midi);
+    if (!selectedNotes.has(key)) { selectedNotes.clear(); selectedNotes.add(key); renderTrackGrid(); }
+    const cell = seqStepElsByMidi.get(midi)[headIdx - tr.page * BAR_STEPS];
+    const stepW = cell.getBoundingClientRect().width;
+    const startX = e.clientX, startY = e.clientY;
+    let moved = false, stepsX = 0, midiDelta = 0;
     function onMove(ev){
-      const dy = startY - ev.clientY;
-      if (Math.abs(dy) > 4) dragged = true;
-      if (!existing || !dragged) return;
-      const newVel = Math.max(1, Math.min(127, Math.round(startVel + dy)));
-      if (newVel !== existing.vel) { existing.vel = newVel; renderTrackGrid(); }
+      stepsX = Math.round((ev.clientX - startX) / stepW);
+      midiDelta = -Math.round((ev.clientY - startY) / 28);
+      moved ||= Math.abs(stepsX) > 0 || Math.abs(midiDelta) > 0;
     }
     function onUp(){
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-      if (!(dragged && existing)) toggleCell(midi, col);
+      window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp);
+      if (moved) moveSelectedNotes(tr, stepsX, midiDelta);
+      else renderTrackGrid();
     }
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
+  }
+
+  function moveSelectedNotes(tr, stepsX, midiDelta){
+    const items = [...selectedNotes].map(key => {
+      const [index, midi] = key.split(':').map(Number);
+      const note = tr.steps[index]?.notes.find(n => n.midi === midi);
+      return note && { index, midi, note };
+    }).filter(Boolean);
+    if (!items.length) return;
+    const { start, end } = barBounds(items[0].index);
+    const minIndex = Math.min(...items.map(item => item.index));
+    const maxEnd = Math.max(...items.map(item => item.index + Math.min(item.note.len || 1, end - item.index)));
+    const minMidi = Math.min(...items.map(item => item.midi));
+    const maxMidi = Math.max(...items.map(item => item.midi));
+    const safeX = Math.max(start - minIndex, Math.min(stepsX, end - maxEnd));
+    const safeY = Math.max(21 - minMidi, Math.min(midiDelta, 108 - maxMidi));
+    if (!safeX && !safeY) return;
+    const itemNotes = new Set(items.map(item => item.note));
+    const destinations = items.map(item => ({ index:item.index + safeX, midi:item.midi + safeY, note:item.note }));
+    const destinationKeys = new Set(destinations.map(item => noteKey(item.index, item.midi)));
+    if (destinationKeys.size !== destinations.length) return;
+    for (const destination of destinations) {
+      if (tr.steps[destination.index].notes.some(note => !itemNotes.has(note) && note.midi === destination.midi)) return;
+    }
+    items.forEach(item => { const notes = tr.steps[item.index].notes; notes.splice(notes.indexOf(item.note), 1); });
+    selectedNotes.clear();
+    destinations.forEach(destination => {
+      const movedNote = { ...destination.note, midi:destination.midi };
+      tr.steps[destination.index].notes.push(movedNote);
+      selectedNotes.add(noteKey(destination.index, destination.midi));
+    });
+    renderTrackGrid();
   }
 
   // stretch is per note, not per step — a chord's voices can each hold their own length.
@@ -281,7 +211,7 @@
   function renderTrackGrid(){
     const tr = currentTrack();
     RANGE.forEach(midi => seqStepElsByMidi.get(midi).forEach(el => {
-      el.classList.remove('active', 'note-head', 'note-body', 'note-tail');
+      el.classList.remove('active', 'note-head', 'note-body', 'note-tail', 'selected');
       el.style.removeProperty('--track-color'); el.style.removeProperty('--vel-pct');
       el.removeAttribute('title');
     }));
@@ -292,10 +222,12 @@
         if (!rowEls) return;
         const len = Math.min(note.len || 1, pageEnd - i);
         const pct = Math.round(30 + (note.vel / 127) * 55);
+        const selected = selectedNotes.has(noteKey(i, note.midi));
         for (let k = 0; k < len; k++) {
           const col = (i + k) - pageStart;
           const el = rowEls[col];
           el.classList.add('active');
+          if (selected) el.classList.add('selected');
           el.style.setProperty('--track-color', tr.color);
           el.style.setProperty('--vel-pct', pct + '%');
           if (k === 0) { el.classList.add('note-head'); el.title = 'vel ' + note.vel; }
@@ -314,7 +246,7 @@
     if (headIdx === -1) return;
     const note = tr.steps[headIdx].notes.find(n => n.midi === midi);
     if (!note) return;
-    const stepW = seqStepElsByMidi.get(midi)[col].getBoundingClientRect().width + 2;
+    const stepW = seqStepElsByMidi.get(midi)[col].getBoundingClientRect().width;
     const startX = e.clientX, startLen = note.len || 1;
     const maxLen = nextNoteHeadAfter(tr, midi, headIdx) - headIdx;
     function onMove(ev){
@@ -366,10 +298,14 @@
   }
 
   document.getElementById('clearTrackBtn').addEventListener('click', () => {
+    clearCurrentTrack();
+  });
+  function clearCurrentTrack(){
     const tr = currentTrack();
     tr.steps.forEach(s => { s.notes = []; });
+    selectedNotes.clear();
     renderTrackGrid();
-  });
+  }
 
   const tabTabsEl = document.getElementById('trackTabs');
   const trackTabEls = {};
@@ -383,16 +319,22 @@
     muteBtn.innerHTML = iconSvg('volumeX'); muteBtn.setAttribute('aria-label', 'Mute track');
     muteBtn.setAttribute('aria-pressed', 'false');
     muteBtn.addEventListener('click', e => {
-      e.stopPropagation(); tr.muted = !tr.muted;
-      muteBtn.setAttribute('aria-pressed', String(tr.muted)); tab.classList.toggle('muted', tr.muted);
+      e.stopPropagation(); toggleTrackMute(tr);
     });
     tab.appendChild(muteBtn);
     tabTabsEl.appendChild(tab); trackTabEls[tr.id] = tab;
   });
   function selectTrack(id){
     recordTarget = id;
+    selectedNotes.clear();
     Object.entries(trackTabEls).forEach(([tid, el]) => el.setAttribute('aria-selected', String(Number(tid) === id)));
     renderTrackGrid();
+  }
+  function toggleTrackMute(tr){
+    tr.muted = !tr.muted;
+    const tab = trackTabEls[tr.id];
+    tab.querySelector('.mute-btn').setAttribute('aria-pressed', String(tr.muted));
+    tab.classList.toggle('muted', tr.muted);
   }
   selectTrack(1);
 
@@ -407,17 +349,26 @@
      at the same length, and only Stop re-syncs them (see ARCHITECTURE.md) ---------------- */
   let playing = false, masterStep = 0, stepTimer = null, recordArmed = false;
 
-  function setPlayheadColumn(col){
-    RANGE.forEach(midi => {
-      seqStepElsByMidi.get(midi).forEach((el, i) => el.classList.toggle('playhead', i === col));
-    });
+  let displayedPlayheadColumn = -1;
+  function setPlayheadColumn(col, durationMs = 0){
+    displayedPlayheadColumn = col;
+    sequencePlayhead.classList.toggle('visible', col >= 0);
+    if (col < 0) return;
+    const step = seqStepElsByMidi.get(RANGE[0])?.[col];
+    if (!step) return;
+    const rollRect = seqRollScroll.getBoundingClientRect();
+    const stepRect = step.getBoundingClientRect();
+    sequencePlayhead.style.setProperty('--playhead-duration', durationMs + 'ms');
+    sequencePlayhead.style.left = (stepRect.left + stepRect.width / 2) + 'px';
+    sequencePlayhead.style.top = rollRect.top + 'px';
+    sequencePlayhead.style.height = rollRect.height + 'px';
   }
-  function updateSelectedPlayhead(){
+  function updateSelectedPlayhead(durationMs){
     const tr = currentTrack();
     const trackLen = tr.bars * 16;
     const trackStep = masterStep % trackLen;
     const local = trackStep - tr.page * 16;
-    setPlayheadColumn(local >= 0 && local < 16 ? local : -1);
+    setPlayheadColumn(local >= 0 && local < 16 ? local : -1, durationMs);
   }
 
   let deviceManager; // assigned once createDeviceManager runs, below
@@ -433,7 +384,7 @@
         setTimeout(() => deviceManager.sendNoteOff(tr.ch, n.midi), (n.len || 1) * stepMs);
       });
     });
-    updateSelectedPlayhead();
+    updateSelectedPlayhead(stepMs);
     masterStep++;
   }
   function restartScheduler(){
@@ -453,6 +404,15 @@
   function stop(){
     pause(); masterStep = 0; setPlayheadColumn(-1);
   }
+  window.addEventListener('resize', () => {
+    if (displayedPlayheadColumn >= 0) setPlayheadColumn(displayedPlayheadColumn);
+  });
+  window.addEventListener('scroll', () => {
+    if (displayedPlayheadColumn >= 0) setPlayheadColumn(displayedPlayheadColumn);
+  }, { passive:true });
+  seqRollScroll.addEventListener('scroll', () => {
+    if (displayedPlayheadColumn >= 0) setPlayheadColumn(displayedPlayheadColumn);
+  }, { passive:true });
   document.getElementById('playBtn').innerHTML = iconSvg('play', 'play');
   document.getElementById('stopBtn').innerHTML = iconSvg('square');
   document.getElementById('recBtn').innerHTML = iconSvg('circle');
@@ -463,6 +423,13 @@
   recBtn.addEventListener('click', () => {
     recordArmed = !recordArmed;
     recBtn.setAttribute('aria-pressed', String(recordArmed));
+  });
+  window.addEventListener('keydown', e => {
+    if (onDevice || e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+    if (e.key.toLowerCase() === 'r') { e.preventDefault(); recBtn.click(); }
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key.toLowerCase() === 'm') { e.preventDefault(); toggleTrackMute(currentTrack()); }
+    if (e.key.toLowerCase() === 'c' || e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); clearCurrentTrack(); }
   });
 
   /* ---- recording captures hold duration as note length: note-on writes a len:1 placeholder
@@ -516,6 +483,3 @@
     onRealNoteOff: midi => seqPianoCtl.release(midi),
   });
 })();
-</script>
-</body>
-</html>

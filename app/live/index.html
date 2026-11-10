@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
+    />
+    <meta name="theme-color" content="#080d14" />
+    <title>Keybench — Live</title>
+    <link rel="stylesheet" href="../assets/shared.css" />
+    <link rel="stylesheet" href="live.css" />
+  </head>
+  <body>
+    <div class="chassis" id="chassis">
+      <div class="chassis-head">
+        <a class="wordmark" href="../index.html"
+          ><b>Keybench</b><span>Live</span></a
+        >
+        <div class="nav-controls">
+          <div class="metronome">
+            <button
+              class="tbtn-sm"
+              id="metroPlay"
+              aria-pressed="false"
+              aria-label="Metronome"
+            ></button>
+            <button
+              class="tbtn-sm"
+              id="bpmDown"
+              aria-label="Decrease BPM"
+            ></button>
+            <span class="bpm-readout" id="bpmReadout">100</span>
+            <button
+              class="tbtn-sm"
+              id="bpmUp"
+              aria-label="Increase BPM"
+            ></button>
+            <span class="beat-dot" id="beatDot"></span>
+          </div>
+          <button class="btn-pill quick-connect" id="quickConnectBtn"></button>
+          <button
+            class="live-help-btn"
+            id="liveHelpBtn"
+            aria-label="Show Live keyboard help"
+            aria-expanded="false"
+            aria-controls="liveHelp"
+          >
+            ?
+          </button>
+          <button
+            class="gear-btn"
+            id="settingsBtn"
+            aria-pressed="false"
+            aria-expanded="false"
+            aria-controls="panelDevice"
+            aria-label="MIDI settings"
+          >
+            <svg
+              class="icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path
+                d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"
+              />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="screen" style="padding: 0">
+        <!-- LIVE -->
+        <section
+          class="panel active"
+          id="panelMain"
+          role="tabpanel"
+          style="gap: 0"
+        >
+          <aside class="live-help-popover" id="liveHelp" hidden>
+            <b>Play from the browser</b>
+            Click or tap keys, or type <kbd>A W S E D F T G Y H U J K</kbd>. Use
+            <kbd>Z</kbd> and <kbd>X</kbd> to shift octaves.
+          </aside>
+          <div class="viewer-readout">
+            <div class="readout-right">
+              <div class="history-strip" id="historyStrip"></div>
+            </div>
+          </div>
+
+          <div class="roll-scroll" id="viewerRoll">
+            <div class="roll-keycol" id="viewerPianoKeys"></div>
+            <div class="roll-canvas-wrap"><canvas id="roll"></canvas></div>
+            <div class="stage-idle" id="stageIdle">
+              <b>Ready</b><span>Play to begin</span>
+            </div>
+            <div class="seq-banner" id="seqBanner">
+              <span class="spark">◆</span><span id="seqBannerText"></span>
+            </div>
+            <div class="chord-card" id="chordCard">
+              <div class="label">Chord</div>
+              <div class="value empty" id="chordValue">play a key</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- DEVICE -->
+        <section
+          class="panel settings-drawer"
+          id="panelDevice"
+          role="dialog"
+          aria-modal="true"
+          aria-label="MIDI settings"
+        >
+          <div class="settings-scroll">
+            <div class="settings-section">
+              <span class="settings-note" id="connectStatus"
+                >Not connected — your on-screen keyboard still works either
+                way.</span
+              >
+            </div>
+            <div class="settings-section">
+              <h3>Input — the connected controller</h3>
+              <div
+                class="device-list"
+                role="radiogroup"
+                aria-label="MIDI input device"
+                id="inputList"
+              ></div>
+            </div>
+            <div class="settings-foot">
+              <button class="btn-pill" id="rescanBtn">Rescan devices</button>
+              <span class="settings-note"
+                >Real hardware shows up here once connected via the navbar. This
+                needs a top-level page served over <code>localhost</code> or
+                HTTPS, in a browser that supports the Web MIDI API (Chrome or
+                Edge).</span
+              >
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <script src="../assets/shared.js"></script>
+    <script src="live.js"></script>
+  </body>
+</html>

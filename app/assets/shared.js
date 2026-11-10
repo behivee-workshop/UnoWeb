@@ -37,7 +37,7 @@ window.KB = (function(){
     const keyEls = new Map();
     RANGE.forEach(midi => {
       const key = document.createElement('div');
-      key.className = 'roll-key ' + (WHITE_PC.has(midi % 12) ? 'white' : 'black');
+      key.className = 'roll-key ' + (WHITE_PC.has(midi % 12) ? 'white' : 'black') + (midi === 60 ? ' middle-c' : '');
       key.dataset.midi = midi;
       key.textContent = (midi % 12 === 0) ? midiName(midi) : '';
       container.appendChild(key);
@@ -60,6 +60,7 @@ window.KB = (function(){
       let octaveShift = 0;
       const heldKeys = new Set();
       window.addEventListener('keydown', ev => {
+        if (ev.defaultPrevented) return;
         if (document.activeElement && /INPUT|TEXTAREA/.test(document.activeElement.tagName)) return;
         const key = ev.key.toLowerCase();
         if (key === 'z') { octaveShift = Math.max(-48, octaveShift - 12); return; }
@@ -214,7 +215,8 @@ window.KB = (function(){
   function createMetronome(els){
     const STORE_KEY = 'kb-metronome-bpm';
     let bpm = Math.max(40, Math.min(220, Number(localStorage.getItem(STORE_KEY)) || 100));
-    let running = false, timer = null, audioCtx = null, beat = 0;
+    let running = false, timer = null, audioCtx = null, beat = 0, nextBeatAt = 0;
+    let tapTimes = [];
 
     els.bpmReadout.textContent = bpm;
     els.bpmDown.innerHTML = iconSvg('minus');
@@ -253,26 +255,53 @@ window.KB = (function(){
       const strong = beat % 4 === 0;
       click(strong); pulse(strong);
       beat++;
+      nextBeatAt = performance.now() + (60000 / bpm);
     }
     function restart(){
       clearInterval(timer);
+      nextBeatAt = performance.now() + (60000 / bpm);
       timer = setInterval(tick, 60000 / bpm);
     }
     function start(){
       if (running) return;
       running = true; beat = 0; els.playBtn.setAttribute('aria-pressed', 'true');
       els.playBtn.innerHTML = iconSvg('pause');
-      restart();
+      tick(); restart();
     }
     function stop(){
       running = false; clearInterval(timer);
       els.playBtn.setAttribute('aria-pressed', 'false');
       els.playBtn.innerHTML = iconSvg('play', 'play');
     }
+    function tapTempo(){
+      const now = performance.now();
+      if (tapTimes.length && now - tapTimes.at(-1) > 2000) tapTimes = [];
+      tapTimes.push(now);
+      if (tapTimes.length > 5) tapTimes.shift();
+      if (tapTimes.length < 2) return;
+      const intervals = tapTimes.slice(1).map((time, i) => time - tapTimes[i]);
+      setBpm(Math.round(60000 / (intervals.reduce((sum, value) => sum + value, 0) / intervals.length)));
+    }
     els.playBtn.innerHTML = iconSvg('play', 'play');
     els.playBtn.addEventListener('click', () => running ? stop() : start());
+    window.addEventListener('keydown', ev => {
+      if (ev.defaultPrevented || ev.ctrlKey || ev.metaKey || ev.altKey || ev.repeat || ev.key.toLowerCase() !== 'k') return;
+      if (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+      ev.preventDefault();
+      if (ev.shiftKey) tapTempo();
+      else running ? stop() : start();
+    });
 
-    return { getBpm: () => bpm };
+    // Apps can use this to finish a phrase at the next four-beat bar boundary.
+    function getTimeToNextBar(){
+      if (!running) return null;
+      const beatMs = 60000 / bpm;
+      const currentBeat = beat % 4 || 4;
+      const beatsToBarEnd = 5 - currentBeat;
+      return Math.max(0, nextBeatAt - performance.now()) + (beatsToBarEnd - 1) * beatMs;
+    }
+
+    return { getBpm: () => bpm, getTimeToNextBar, tapTempo };
   }
 
   return {

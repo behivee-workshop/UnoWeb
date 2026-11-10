@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="theme-color" content="#080d14">
+<title>Keybench — Sheet</title>
+<link rel="stylesheet" href="../assets/shared.css">
+<link rel="stylesheet" href="sheet.css">
+</head>
+<body>
+
+<div class="chassis" id="chassis">
+  <div class="chassis-head">
+    <a class="wordmark" href="../index.html"><b>Keybench</b><span>Sheet</span></a>
+    <div class="nav-controls">
+      <div class="metronome">
+        <button class="tbtn-sm" id="metroPlay" aria-pressed="false" aria-label="Metronome"></button>
+        <button class="tbtn-sm" id="bpmDown" aria-label="Decrease BPM"></button>
+        <span class="bpm-readout" id="bpmReadout">100</span>
+        <button class="tbtn-sm" id="bpmUp" aria-label="Increase BPM"></button>
+        <span class="beat-dot" id="beatDot"></span>
+      </div>
+      <button class="btn-pill quick-connect" id="quickConnectBtn"></button>
+      <button class="sheet-help-btn" id="sheetHelpBtn" aria-label="Show Sheet editing help" aria-expanded="false" aria-controls="sheetHelp">?</button>
+      <button class="gear-btn" id="settingsBtn" aria-pressed="false" aria-expanded="false" aria-controls="panelDevice" aria-label="MIDI settings">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="screen">
+    <!-- SHEET -->
+    <section class="panel active" id="panelMain" role="tabpanel">
+      <aside class="sheet-help-popover" id="sheetHelp" hidden>
+        <b>Editing this bar</b>
+        Each track has its own 1–4 bar loop. Click a note to select it; Shift-drag to select a group; then drag to move the selection. Drag a note’s right edge to stretch it; Alt-click removes a note. <kbd>R</kbd> arms recording; Space plays or pauses; <kbd>M</kbd> mutes; <kbd>C</kbd>, Delete, or Backspace clear the selected track.
+      </aside>
+      <div class="transport">
+        <button class="tbtn primary" id="playBtn" aria-label="Play"></button>
+        <button class="tbtn" id="stopBtn" aria-label="Stop"></button>
+        <button class="tbtn rec-btn" id="recBtn" aria-pressed="false" aria-label="Arm recording"></button>
+        <div class="grid-settings">
+          <div class="pill-group" role="group" aria-label="Bars" id="barsCtl">
+            <span class="pg-label">bars</span>
+            <button data-bars="1" aria-pressed="true">1</button>
+            <button data-bars="2" aria-pressed="false">2</button>
+            <button data-bars="3" aria-pressed="false">3</button>
+            <button data-bars="4" aria-pressed="false">4</button>
+          </div>
+          <div class="pill-group" aria-label="Bar page">
+            <button class="icon-btn" id="pagePrev" aria-label="Previous bar"></button>
+            <span class="pg-label" id="pageReadout">bar 1/1</span>
+            <button class="icon-btn" id="pageNext" aria-label="Next bar"></button>
+          </div>
+          <div class="pill-group" role="group" aria-label="Record quantize" id="qtzCtl">
+            <span class="pg-label">quantize</span>
+            <button data-qtz="4" aria-pressed="false">1/4</button>
+            <button data-qtz="8" aria-pressed="false">1/8</button>
+            <button data-qtz="16" aria-pressed="true">1/16</button>
+          </div>
+          <button class="btn-pill" id="clearTrackBtn">Clear track</button>
+        </div>
+      </div>
+
+      <div class="track-tabs" role="tablist" aria-label="Tracks" id="trackTabs"></div>
+
+      <div class="roll-scroll" id="seqRoll">
+        <div class="roll-keycol" id="seqPianoKeys"></div>
+        <div class="roll-stepscol" id="seqStepCols"></div>
+      </div>
+    </section>
+
+    <!-- DEVICE -->
+    <section class="panel settings-drawer" id="panelDevice" role="dialog" aria-modal="true" aria-label="MIDI settings">
+      <div class="settings-scroll">
+        <div class="settings-section">
+          <span class="settings-note" id="connectStatus">Not connected — your on-screen keyboard still works either way.</span>
+        </div>
+        <div class="settings-section">
+          <h3>Input — the connected controller</h3>
+          <div class="device-list" role="radiogroup" aria-label="MIDI input device" id="inputList"></div>
+        </div>
+        <div class="settings-section">
+          <h3>Output — where Sheet sends</h3>
+          <div class="device-list" role="radiogroup" aria-label="MIDI output device" id="outputList"></div>
+        </div>
+        <div class="settings-foot">
+          <button class="btn-pill" id="rescanBtn">Rescan devices</button>
+          <span class="settings-note">Real hardware shows up here once connected via the navbar. This needs a top-level page served over <code>localhost</code> or HTTPS, in a browser that supports the Web MIDI API (Chrome or Edge).</span>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script src="../assets/shared.js"></script>
+<script src="sheet.js"></script>
+</body>
+</html>

@@ -2,30 +2,41 @@
 
 Three small standalone apps sharing one foundation. No build step, no
 framework, no external runtime dependency anywhere. Icons are lucide.dev SVG
-paths inlined directly (`ICON_PATHS` in `shared.js`).
+paths inlined directly (`ICON_PATHS` in `app/assets/shared.js`).
 
 ```
 app/
   index.html    launcher — three cards, links to the apps below
-  shared.css    design tokens, navbar, piano/roll, pill controls, device panel
-  shared.js     window.KB — icons, piano component, MIDI device manager, metronome
-  live.html     Live  — the MIDI viewer (chord/sequence detection, note chart)
-  sheet.html    Sheet — the step sequencer (per-track bars/pages, stretch, velocity)
-  looper.html   Looper — Boss RC-5-style live looper (per-track play/pause, overdub)
+  assets/
+    shared.css  design tokens, navbar, piano/roll, pill controls, device panel
+    shared.js   window.KB — icons, piano component, MIDI device manager, metronome
+  live/
+    index.html  Live app document
+    live.css    Live-only styles
+    live.js     Live-only behavior
+  sheet/
+    index.html  Sheet app document
+    sheet.css   Sheet-only styles
+    sheet.js    Sheet-only behavior
+  loop/
+    index.html  Loop app document
+    loop.css    Loop-only styles
+    loop.js     Loop-only behavior
 ```
 
-Each app page is a complete document: `<link shared.css>` + `<script
-shared.js>` (which attaches `window.KB`, not an ES module — there's no build
-step to bundle one) + its own small inline `<style>` for whatever is specific
-to that app, and its own inline `<script>` IIFE wiring that app's behavior.
+Each app owns a self-contained folder, so it can be opened at `/live/`,
+`/sheet/`, or `/loop/`. Its document loads the shared foundation from
+`../assets/` and app-specific CSS and JavaScript from its own folder.
+`shared.js` attaches `window.KB`, rather than being an ES module; there is no
+build step to bundle one.
 
 Design system: a dark-only Bauhaus/"Composer" token set in `:root` (no
 light-mode toggle — this is the product's own screen, like a synth's LCD, not
 a page expected to follow the OS theme). Pill-shaped buttons, 6px cards,
 hairline borders, four confetti hues (`--t1`..`--t4`) used as the four track
-colors in both Sheet and Looper.
+colors in both Sheet and Loop.
 
-## Shared foundation (`shared.css` / `shared.js`)
+## Shared foundation (`app/assets/shared.css` / `app/assets/shared.js`)
 
 **Navbar.** Every app's `.chassis-head` is the same three things: a wordmark
 (links back to the launcher), a metronome, a quick-connect button, and a
@@ -42,9 +53,10 @@ content, a tablist for it stops making sense.
 drives an audible click (Web Audio `OscillatorNode` blips, no audio files)
 and the beat-dot pulse, and `getBpm()` for any app that wants to read the
 current tempo. Sheet reads it directly instead of keeping its own separate
-BPM control — one tempo, not a different number in every app. Looper
-deliberately does **not** sync to it: a live looper is free-time, like a real
-pedal, and quantizing it would defeat the point.
+BPM control — one tempo, not a different number in every app. Loop playback
+is deliberately free-time, like a real pedal. When the metronome is running,
+its first recording pass arms at the next beat 1 and a stop request closes it
+at a following beat 1; performance timing within the loop remains free.
 
 **Shared piano** (`buildKeyColumn`, one instance per app): the full 88 keys,
 A0–C8 (MIDI 21–108), vertical, high pitch at top, in an `overflow:auto`
@@ -78,10 +90,10 @@ hardware/driver strings — the device list is built with
 Each app routes incoming real MIDI (`onRealNoteOn`/`onRealNoteOff`) straight
 to its own piano's `press`/`release`, unconditionally — there's no "only if
 this panel is active" check. A hardware note should still register (and, in
-Sheet/Looper, still record) even while you're glancing at the Device panel to
+Sheet/Loop, still record) even while you're glancing at the Device panel to
 change a setting.
 
-## Live (`live.html`)
+## Live (`app/live/`)
 
 - **Chord detection** (`detectChord`): matches the currently-held pitch-class
   set against a fixed chord-formula table (maj/min/dim/aug/7ths/sus).
@@ -104,7 +116,7 @@ change a setting.
   playback view — there's no "future" to show approaching, so new events are
   born at the live edge rather than approaching a fixed playhead.
 
-## Sheet (`sheet.html`)
+## Sheet (`app/sheet/`)
 
 ### Data model
 
@@ -197,11 +209,11 @@ restart, even though they can drift apart while playing — expected behavior
 of polymetric sequencing, not a bug). There is no MIDI-out text log anymore —
 notes go to the selected output device directly; nothing to read on screen.
 
-## Looper (`looper.html`)
+## Loop (`app/loop/`)
 
 Boss RC-5 inspired, but with two explicit controls per track instead of one
 footswitch that cycles rec→play→overdub→play — a tap-cycle is fine on a
-pedal you operate by feel, but ambiguous as an on-screen button, so Looper
+pedal you operate by feel, but ambiguous as an on-screen button, so Loop
 uses a dedicated **Play/Pause** and a dedicated **Overdub** button per track.
 
 ### Per-track state machine
@@ -213,11 +225,11 @@ playing/overdubbing --(Play/Pause)--> paused --(Play/Pause)--> playing
 (any state) --(Clear)--> empty
 ```
 
-- **Play/Pause on empty**: starts recording (`recordStartAt`), with no
-  predefined length — like a real looper, the first pass defines the loop.
-- **Play/Pause while recording**: closes the loop. `loopLenMs = now -
-  recordStartAt`; playback starts immediately, phase-aligned so elapsed-time
-  0 is exactly where recording stopped.
+- **Play/Pause on empty**: when the metronome is running, arms recording for the
+  next beat 1; otherwise it starts immediately. The first pass defines the loop.
+- **Play/Pause while recording**: when the metronome is running, keeps recording
+  through the current four-beat bar and closes on the next beat 1. With the
+  metronome stopped, it closes immediately. Playback starts at that boundary.
 - **Play/Pause while playing/overdubbing**: pauses. Resuming shifts
   `loopStartAt` forward by however long it was paused, so the loop resumes
   at the same position rather than jumping — pausing a modulo-based clock
@@ -246,7 +258,7 @@ played, like a real pedal.
 Both apps have 4 colored tracks with MIDI channels and mute — that part is
 identical in spirit. Where they differ is the editing model: Sheet is
 after-the-fact, quantized, step-grid editing of something that doesn't have
-to be played in real time; Looper is live capture of actual performance
+to be played in real time; Loop is live capture of actual performance
 timing with no grid at all. Trying to unify them into one data model would
 have made both worse, so they don't share one — `TRACKS` is a different
 shape in each file.
@@ -260,9 +272,9 @@ shape in each file.
   Sheet: no live-growing visual while a note is being recorded; length is
   applied on release. Sheet: no "this track is playing on a different page"
   indicator.
-- Looper: held-across-the-wrap-point notes during overdub get a best-effort
+- Loop: held-across-the-wrap-point notes during overdub get a best-effort
   duration fix-up (`+= loopLenMs` if negative), not rigorously tested against
   every edge case.
 - Per-track independent length (both apps) means tracks can drift relative
-  to each other during playback; only Stop (Sheet) or Clear (Looper)
+  to each other during playback; only Stop (Sheet) or Clear (Loop)
   resets a given track. This is intentional, not a bug to fix later.

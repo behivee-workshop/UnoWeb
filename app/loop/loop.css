@@ -1,0 +1,62 @@
+/* ================= Loop-only: one card per track, no piano — a looper is played from
+     a real connected controller, the on-screen keyboard doesn't earn its place here ================= */
+  .looper-tracks { flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; gap:12px; }
+  #panelMain { position:relative; }
+  .looper-help-btn {
+    width:38px; height:38px; border-radius:11px;
+    border:1px solid var(--border); background:var(--surface-elevated); color:var(--text-muted);
+    font-family:var(--font-mono); font-size:16px; font-weight:800;
+  }
+  .looper-help-btn[aria-expanded="true"] { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .looper-help-popover {
+    position:absolute; top:0; right:0; z-index:4; width:min(360px, 100%); padding:14px 16px;
+    border:1px solid rgba(120,170,220,.38); border-radius:12px;
+    background:linear-gradient(145deg, rgba(28,46,68,.98), rgba(9,16,26,.99));
+    box-shadow:0 16px 36px rgba(0,0,0,.34); color:var(--text-muted); font-size:12px; line-height:1.55;
+  }
+  .looper-help-popover b { display:block; color:var(--text); font-size:13px; margin-bottom:5px; }
+  /* tablet and up: four tracks side by side instead of stacked, now that there's no piano
+     column competing for width */
+  @container (min-width: 640px) {
+    .looper-tracks { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); align-content:start; }
+  }
+
+  .loop-track {
+    border:1px solid var(--border); border-radius:13px; background:linear-gradient(145deg, rgba(28,43,62,.84), rgba(12,21,31,.8));
+    padding:15px; display:flex; flex-direction:column; gap:14px; box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
+  }
+  .loop-track.selected { border-color:var(--track-color); box-shadow:0 0 0 1px color-mix(in srgb, var(--track-color) 28%, transparent), 0 0 26px color-mix(in srgb, var(--track-color) 13%, transparent), inset 0 1px 0 rgba(255,255,255,.05); }
+  .loop-track-head { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .loop-track-head .swatch { width:9px; height:9px; border-radius:3px; background:var(--track-color); flex:0 0 auto; box-shadow:0 0 14px color-mix(in srgb, var(--track-color) 42%, transparent); }
+  .loop-track-head b { font-size:13px; font-weight:700; }
+  .loop-track-head small { font-family:var(--font-mono); font-size:12px; color:var(--text-muted); }
+  .loop-bars { font-family:var(--font-mono); font-size:11px; color:var(--track-color); font-weight:700; }
+  .loop-state { margin-left:auto; font-family:var(--font-mono); font-size:12px; color:var(--text-muted); }
+  .loop-state.is-recording { color:var(--rec); }
+  .loop-state.is-overdubbing { color:var(--accent); }
+
+  .loop-track-controls { display:grid; grid-template-columns:minmax(0, 1fr) repeat(3, 58px); align-items:stretch; gap:8px; }
+  .loop-track .tbtn.primary[aria-pressed="true"] { animation:recpulse 1s ease-in-out infinite; }
+  @keyframes recpulse { 0%,100%{ box-shadow:0 0 0 0 rgba(255,98,109,.42), inset 0 1px 0 rgba(255,255,255,.18); } 50%{ box-shadow:0 0 0 8px rgba(255,98,109,0), inset 0 1px 0 rgba(255,255,255,.18); } }
+  .loop-track .tbtn { background:linear-gradient(145deg, #1b2b3e, #0c151f); border:1px solid var(--border-strong); border-radius:11px; min-width:58px; height:58px; display:flex; align-items:center; justify-content:center; color:var(--text); box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 3px 0 rgba(0,0,0,.28); }
+  @media (hover: hover) and (pointer: fine) { .loop-track .tbtn:hover:not(:disabled) { background:#21364d; transform:translateY(-1px); } }
+  .loop-track .tbtn:active:not(:disabled) { transform:translateY(2px); box-shadow:inset 0 1px 0 rgba(0,0,0,.12), 0 1px 0 rgba(0,0,0,.28); }
+  .loop-track .tbtn.primary { background:linear-gradient(145deg, #359df6, #1676cd); border-color:#58b2ff; color:#fff; display:grid; grid-template-columns:20px auto; gap:8px; padding:0 15px; justify-content:center; }
+  .loop-track .tbtn.primary::after { content:attr(data-label); font-size:11px; font-family:var(--font-mono); font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+  .loop-track .tbtn.primary.recording { background:linear-gradient(145deg, #ff6c75, #d64450); border-color:#ff8990; }
+  .loop-track .tbtn[aria-pressed="true"].overdub { background:linear-gradient(145deg, #4baaff, #1a7ed7); border-color:#73bdff; color:#fff; }
+  .loop-track .mute-btn {
+    min-width:58px; width:58px; height:58px; border-radius:11px; border:1px solid var(--border-strong); background:linear-gradient(145deg, #1b2b3e, #0c151f);
+    color:var(--text-muted); display:flex; align-items:center; justify-content:center; margin:0; box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 3px 0 rgba(0,0,0,.28);
+  }
+  .loop-track .mute-btn .icon { width:14px; height:14px; }
+  .loop-track .mute-btn[aria-pressed="true"] { background:var(--mute-active); color:#fff; border-color:var(--mute-active); }
+
+  .loop-progress { height:5px; border-radius:3px; background:#080e15; overflow:hidden; }
+  .loop-progress-fill { height:100%; width:0%; background:var(--track-color); }
+  @container (max-width: 390px) {
+    .loop-track-controls { grid-template-columns:minmax(0, 1fr) repeat(3, 54px); gap:6px; }
+    .loop-track .tbtn, .loop-track .mute-btn { min-width:54px; height:54px; }
+    .loop-track .mute-btn { width:54px; }
+    .loop-track .tbtn.primary { padding-inline:9px; gap:5px; }
+  }

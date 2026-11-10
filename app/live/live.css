@@ -1,0 +1,191 @@
+/* ================= Live-only: chord/sequence readout + glowing note chart ================= */
+      .viewer-readout {
+        display: block;
+      }
+
+      .chord-card {
+        position: fixed;
+        right: auto;
+        bottom: auto;
+        z-index: 3;
+        width: min(280px, calc(100vw - 28px));
+        min-width: min(220px, calc(100vw - 28px));
+        max-width: calc(100vw - 28px);
+        min-height: 126px;
+        pointer-events: none;
+        background: linear-gradient(
+          140deg,
+          rgba(26, 56, 88, 0.94),
+          rgba(10, 19, 30, 0.96)
+        );
+        border: 1px solid rgba(72, 168, 255, 0.28);
+        border-radius: 12px;
+        padding: 14px 16px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 5px;
+      }
+      .chord-card .label {
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--accent);
+        font-weight: 700;
+      }
+      .chord-card .value {
+        font-family: var(--font-display);
+        font-size: clamp(26px, 6.5vw, 42px);
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: -0.05em;
+        color: var(--text);
+        min-height: 1.1em;
+        text-wrap: balance;
+        overflow-wrap: anywhere;
+      }
+      .chord-card .value.empty {
+        color: var(--text-muted);
+        font-size: 15px;
+        font-weight: 400;
+        font-family: var(--font-body);
+        letter-spacing: normal;
+      }
+
+      .readout-right {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        justify-content: center;
+        min-width: 0;
+      }
+      .seq-banner {
+        position: absolute;
+        left: 14px;
+        bottom: 14px;
+        z-index: 3;
+        max-width: min(300px, calc(100% - 190px));
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 11px 13px;
+        border-radius: 10px;
+        background: rgba(7, 13, 20, 0.46);
+        border: 1px solid var(--border);
+        opacity: 0;
+        transform: translateY(-4px);
+        transition:
+          opacity 0.25s ease,
+          transform 0.25s ease;
+        font-size: 13px;
+        color: var(--text);
+        min-height: 18px;
+      }
+      .seq-banner.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .seq-banner .spark {
+        color: var(--text);
+        font-family: var(--font-mono);
+        font-weight: 700;
+      }
+      .history-strip {
+        display: none;
+      }
+      .history-strip .chip {
+        flex: 0 0 auto;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--text-muted);
+        border: 1px solid var(--border);
+        border-radius: 7px;
+        padding: 8px 10px;
+        background: rgba(7, 13, 20, 0.42);
+      }
+      .history-strip .chip:last-child {
+        color: var(--text);
+        border-color: var(--accent);
+      }
+
+      .roll-canvas-wrap {
+        position: relative;
+        flex: 1;
+      }
+      .roll-canvas-wrap canvas {
+        position: absolute;
+        inset: 0 0 auto 0;
+        width: 100%;
+        display: block;
+      }
+      .stage-idle {
+        position: fixed;
+        inset: auto;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 6px;
+        color: var(--text-muted);
+        opacity: 1;
+        transition: opacity 0.4s ease;
+        pointer-events: none;
+      }
+      .stage-idle.hide {
+        opacity: 0;
+      }
+      .stage-idle b {
+        font-family: var(--font-display);
+        font-size: 15px;
+        letter-spacing: -0.01em;
+        color: var(--text);
+      }
+      .stage-idle span {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+      #panelMain {
+        position: relative;
+      }
+      .live-help-btn {
+        width: 38px;
+        height: 38px;
+        border-radius: 11px;
+        border: 1px solid var(--border);
+        background: var(--surface-elevated);
+        color: var(--text-muted);
+        font-family: var(--font-mono);
+        font-size: 16px;
+        font-weight: 800;
+      }
+      .live-help-btn[aria-expanded="true"] {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+      .live-help-popover {
+        position: absolute;
+        top: 0;
+        right: 0;
+        z-index: 4;
+        width: min(340px, calc(100% - 16px));
+        padding: 14px 16px;
+        border: 1px solid rgba(120, 170, 220, 0.38);
+        border-radius: 12px;
+        background: linear-gradient(
+          145deg,
+          rgba(28, 46, 68, 0.98),
+          rgba(9, 16, 26, 0.99)
+        );
+        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.34);
+        color: var(--text-muted);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+      .live-help-popover b {
+        display: block;
+        color: var(--text);
+        font-size: 13px;
+        margin-bottom: 5px;
+      }
