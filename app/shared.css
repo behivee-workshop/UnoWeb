@@ -1,0 +1,167 @@
+/* Composer system (Bauhaus confetti on concrete), committed to a single dark scheme —
+   this is the product's own screen, not a page that should flip with the OS.
+   Shared by every page in app/ (launcher, live.html, sheet.html). */
+:root {
+  --bg:#101516; --surface:#262D2F; --surface-raised:#2F3739;
+  --border:#3A4245; --text:#FFFFFF; --text-muted:#9AA3A6;
+  --accent:#1871DA; --accent-soft:rgba(24,113,218,.18);
+  --rec:#C60808; --mute-active:#C60808; --ok:#1EC072;
+  --t1:#F6609F; --t2:#1EC072; --t3:#FFBB38; --t4:#9664D7;
+  --key-white:#EDE7DD; --key-white-text:#1B1917; --key-black:#15130F;
+  --shadow-focus:0 0 0 3px rgba(24,113,218,.3);
+  --font-display:'Helvetica Neue',Arial,ui-sans-serif,sans-serif;
+  --font-body:-apple-system,'Segoe UI','Helvetica Neue',Arial,sans-serif;
+  --font-mono:'SF Mono','Cascadia Code','JetBrains Mono',ui-monospace,'Courier New',monospace;
+}
+
+* { box-sizing: border-box; }
+html,body { margin:0; height:100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  display:flex; flex-direction:column;
+  min-height:100vh; min-height:100dvh;
+}
+button { font-family: inherit; cursor:pointer; }
+button:focus-visible, [tabindex]:focus-visible, input:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px; box-shadow: var(--shadow-focus);
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .001s !important; transition-duration: .001s !important; }
+}
+
+/* lucide icons, inlined (no CDN / no JS lib — every icon is a static SVG, see shared.js) */
+.icon { width:16px; height:16px; display:inline-block; flex:0 0 auto; }
+
+/* ---- chassis (the product; fills the real viewport, reflows via its own container query) ---- */
+.chassis {
+  container-type: inline-size;
+  background: var(--surface);
+  padding: 16px;
+  display:flex; flex-direction:column;
+  flex:1; min-height:0;
+}
+
+/* navbar: wordmark + quick-connect + a settings toggle for the fuller device list.
+   Each app page has exactly one center view, so there's no tab row to switch between
+   here — switching apps is a page navigation (via the wordmark), not an in-page tab. */
+.chassis-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:12px; }
+.wordmark { display:flex; flex-direction:column; gap:2px; color:inherit; text-decoration:none; }
+.wordmark b {
+  font-family:var(--font-display); font-size:20px; letter-spacing:.06em;
+  font-weight:700; text-transform: uppercase; color:var(--text);
+}
+.wordmark span { font-size:12.5px; color:var(--text-muted); letter-spacing:.03em; }
+
+.nav-controls { display:flex; align-items:center; gap:8px; }
+.quick-connect { display:flex; align-items:center; gap:6px; }
+.quick-connect .icon { width:13px; height:13px; }
+.gear-btn {
+  width:36px; height:36px; border-radius:9999px; border:1px solid var(--border);
+  background:var(--bg); color:var(--text-muted); display:flex; align-items:center; justify-content:center;
+  flex:0 0 auto;
+}
+.gear-btn[aria-pressed="true"] { background:var(--accent); border-color:var(--accent); color:#fff; }
+
+/* metronome: one shared tempo + click, in every app's navbar */
+.metronome { display:flex; align-items:center; gap:6px; }
+.tbtn-sm {
+  width:28px; height:28px; border-radius:9999px; background:var(--bg); border:1px solid var(--border);
+  color:var(--text); display:flex; align-items:center; justify-content:center; flex:0 0 auto;
+}
+.tbtn-sm .icon { width:13px; height:13px; }
+.tbtn-sm[aria-pressed="true"] { background:var(--accent); border-color:var(--accent); color:#fff; }
+.metronome .bpm-readout {
+  font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-size:14px; font-weight:700;
+  width:30px; text-align:center; color:var(--text);
+}
+.beat-dot { width:10px; height:10px; border-radius:50%; background:var(--border); flex:0 0 auto; }
+
+@container (max-width: 460px) {
+  .chassis-head { flex-direction:column; }
+  .nav-controls { align-self:stretch; justify-content:space-between; flex-wrap:wrap; }
+}
+
+.screen {
+  background: var(--bg);
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:16px;
+  display:flex; flex-direction:column; gap:14px;
+  flex:1; min-height:0;
+}
+.panel { display:none; flex-direction:column; gap:14px; flex:1; min-height:0; }
+.panel.active { display:flex; }
+
+/* ================= SHARED VERTICAL PIANO / ROLL ================= */
+.roll-scroll {
+  position:relative; display:flex; flex:1; min-height:260px; overflow:auto;
+  border:1px solid var(--border); border-radius:6px; background:var(--surface);
+}
+
+/* sticky, not a nested scroll container: a second independent scroller is what
+   desyncs the keys from the grid when the grid also needs to scroll horizontally */
+.roll-keycol { display:flex; flex-direction:column; flex:0 0 56px; position:sticky; left:0; z-index:2; }
+.roll-key {
+  height:28px; flex:0 0 28px; display:flex; align-items:center; justify-content:flex-end;
+  padding-right:8px; font-family:var(--font-mono); font-size:12px;
+  border-bottom:1px solid var(--border); cursor:pointer; user-select:none; touch-action:none;
+  transition: background .08s ease;
+}
+.roll-key.white { background:var(--key-white); color:var(--key-white-text); }
+.roll-key.black { background:var(--key-black); color:#fff; }
+.roll-key.white.on { background: color-mix(in srgb, var(--key-white) 55%, var(--accent)); }
+.roll-key.black.on { background: color-mix(in srgb, var(--key-black) 45%, var(--accent)); }
+
+.key-hint { text-align:center; font-size:12.5px; color:var(--text-muted); margin-top:-2px; }
+
+/* ---- generic pill controls, used by transport/grid-settings and the device panel ---- */
+.pill-group {
+  display:flex; align-items:center; gap:2px; background:var(--surface-raised); border:1px solid var(--border);
+  border-radius:9999px; padding:3px;
+}
+.pill-group .pg-label { font-size:12px; color:var(--text-muted); padding:0 6px 0 8px; }
+.pill-group button {
+  background:transparent; border:none; border-radius:9999px; padding:5px 10px;
+  font-family:var(--font-mono); font-size:12px; color:var(--text-muted);
+  display:flex; align-items:center; justify-content:center;
+}
+.pill-group button.icon-btn { padding:6px; }
+.pill-group button .icon { width:12px; height:12px; }
+.pill-group button[aria-pressed="true"] { background:var(--accent); color:#fff; }
+.pill-group button:disabled { opacity:.35; cursor:default; }
+
+.btn-pill {
+  align-self:flex-start; border-radius:9999px; border:1px solid var(--border); background:var(--surface-raised);
+  color:var(--text); padding:8px 16px; font-size:12px; font-family:var(--font-mono);
+}
+.btn-pill[disabled] { opacity:.5; cursor:default; }
+.btn-pill.on { background:var(--accent); border-color:var(--accent); color:#fff; }
+
+/* ================= DEVICE (MIDI settings) ================= */
+.settings-scroll { flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; gap:20px; }
+.settings-section { display:flex; flex-direction:column; gap:8px; }
+.settings-section h3 {
+  font-family:var(--font-display); font-size:13px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--text-muted); font-weight:600; margin:0;
+}
+.device-list { display:flex; flex-direction:column; gap:4px; border:1px solid var(--border); border-radius:6px; background:var(--surface-raised); padding:8px; }
+.device-row {
+  display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:6px; cursor:pointer;
+  background:transparent; border:none; width:100%; text-align:left; color:var(--text); font:inherit;
+}
+.device-row:hover { background: var(--bg); }
+.device-row[aria-checked="true"] { background: var(--accent-soft); }
+.device-row[aria-checked="true"] .device-info small { color: var(--text); }
+.device-dot { width:8px; height:8px; border-radius:50%; background:var(--ok); flex:0 0 auto; }
+.device-dot.off { background:var(--border); }
+.device-info { display:flex; flex-direction:column; flex:1; min-width:0; gap:1px; }
+.device-info b { font-size:13px; font-weight:600; }
+.device-info small { font-family:var(--font-mono); font-size:12px; color:var(--text-muted); }
+.device-check { width:16px; height:16px; border-radius:50%; border:1.5px solid var(--border); flex:0 0 auto; position:relative; }
+.device-row[aria-checked="true"] .device-check { border-color:var(--accent); }
+.device-row[aria-checked="true"] .device-check::after { content:""; position:absolute; inset:3px; border-radius:50%; background:var(--accent); }
+
+.settings-foot { display:flex; flex-direction:column; gap:8px; }
+.settings-note { font-size:12.5px; color:var(--text-muted); max-width:52ch; }

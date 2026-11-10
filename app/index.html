@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Keybench</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  body { align-items:center; justify-content:center; }
+  .launcher { max-width:720px; width:100%; padding:16px; display:flex; flex-direction:column; gap:20px; }
+  .launcher-head b {
+    font-family:var(--font-display); font-size:28px; letter-spacing:.06em; font-weight:700;
+    text-transform:uppercase; display:block;
+  }
+  .launcher-head span { color:var(--text-muted); font-size:13px; }
+  .launcher-cards { display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; }
+  @media (max-width:640px) { .launcher-cards { grid-template-columns:1fr; } }
+  .launcher-card {
+    display:flex; flex-direction:column; gap:8px; text-align:left; text-decoration:none; color:var(--text);
+    background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:18px;
+  }
+  .launcher-card:hover { border-color:var(--accent); }
+  .launcher-card .dot { width:10px; height:10px; border-radius:50%; background:var(--track-color); }
+  .launcher-card b { font-family:var(--font-display); font-size:15px; letter-spacing:.04em; text-transform:uppercase; }
+  .launcher-card p { margin:0; font-size:13px; color:var(--text-muted); line-height:1.5; }
+</style>
+</head>
+<body>
+
+<div class="launcher">
+  <div class="launcher-head">
+    <b>Keybench</b>
+    <span>three small MIDI apps, one shared keyboard and device connection</span>
+  </div>
+  <div class="launcher-cards">
+    <a class="launcher-card" href="live.html" style="--track-color:var(--t1)">
+      <span class="dot"></span>
+      <b>Live</b>
+      <p>Play and watch — chord detection, scale/arpeggio recognition, and a glowing note chart.</p>
+    </a>
+    <a class="launcher-card" href="sheet.html" style="--track-color:var(--t2)">
+      <span class="dot"></span>
+      <b>Sheet</b>
+      <p>A 4-track step sequencer. Each track keeps its own 1-4 bar length, shown one bar at a time.</p>
+    </a>
+    <a class="launcher-card" href="looper.html" style="--track-color:var(--t4)">
+      <span class="dot"></span>
+      <b>Looper</b>
+      <p>A Boss RC-5-style live looper for MIDI — per-track play/pause, overdub, and clear.</p>
+    </a>
+  </div>
+</div>
+
+</body>
+</html>
