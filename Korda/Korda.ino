@@ -85,7 +85,7 @@ const char *FLAVOR_NAMES[7] = {"Major", "Minor", "Sus2", "Sus4", "Min7", "Add9",
 const int8_t IDLE_OFFSETS[2] = {7, 12}; // root + 5th + octave
 
 // ---- Performance state ----
-int8_t root = 48;          // MIDI note, 48..60
+int8_t root = 60;          // MIDI note, 60..72 (C4..C5)
 int8_t mode = 0;           // index into MODE_INTERVALS, 0 = Ionian
 int8_t octaveOffset = 0;   // -2..+2, steps of 12 semitones
 int8_t heldButton = -1;    // 0..6, or -1 if nothing held
@@ -189,8 +189,8 @@ void readJoystick() {
   if (sector != DIR_NONE && sector != lastJoySector) {
     if (menuOpen) {
       switch (sector) {
-        case DIR_TOP: root = constrain(root + ROOT_DIR_SIGN, 48, 60); break;
-        case DIR_S:   root = constrain(root - ROOT_DIR_SIGN, 48, 60); break;
+        case DIR_TOP: root = constrain(root + ROOT_DIR_SIGN, 60, 72); break;
+        case DIR_S:   root = constrain(root - ROOT_DIR_SIGN, 60, 72); break;
         case DIR_E:   mode = ((mode + MODE_DIR_SIGN) % 7 + 7) % 7; break;
         case DIR_W:   mode = ((mode - MODE_DIR_SIGN) % 7 + 7) % 7; break;
         default: break; // diagonals do nothing in the menu

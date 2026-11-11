@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          "app/index.html"
+        ],
+        "createdAt": "2026-11-09T22:21:57.286Z",
+        "reason": "static analyzer pairs --text-muted against --text's raw #FFFFFF value; --text is only ever used as a text color, never a background, in this file (verified via grep) — no element actually renders this pair"
+      }
+    ]
+  }
+}
