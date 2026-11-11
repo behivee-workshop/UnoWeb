@@ -47,6 +47,13 @@ const int8_t JOY_X_SIGN = 1;
 const int8_t JOY_Y_SIGN = 1;
 const int JOY_DEADZONE = 150; // ADC counts from center before a direction registers
 
+// Flip either of these to -1 if root (up/down) or mode (left/right) steps
+// the wrong way in the menu -- independent of JOY_X/Y_SIGN above, which is
+// about whether the stick's physical directions land on the right sector
+// at all, not which way that sector should count.
+const int8_t ROOT_DIR_SIGN = 1;
+const int8_t MODE_DIR_SIGN = -1;
+
 Bounce noteButtons[7];
 Bounce octDownBtn, octUpBtn, menuBtn;
 
@@ -149,26 +156,43 @@ void readMenuButton() {
 // sliding straight to a different sector are the only transitions that matter.
 // In the menu, only the four cardinal pushes do anything (root up/down,
 // mode left/right); in Play, all eight pick a flavor as before.
+//
+// A raw sector reading only gets accepted once it's held steady for
+// JOY_SETTLE_MS -- the spring's own return-to-center can wobble through a
+// neighboring sector for a few ms on the way back, and without this, that
+// wobble reads as a real push and silently changes the flavor.
+Direction pendingJoySector = DIR_NONE;
+unsigned long pendingJoySince = 0;
+const unsigned long JOY_SETTLE_MS = 20;
+
 void readJoystick() {
   int dx = JOY_X_SIGN * (analogRead(JOY_X_PIN) - joyCenterX);
   int dy = JOY_Y_SIGN * (analogRead(JOY_Y_PIN) - joyCenterY);
 
-  Direction sector = DIR_NONE;
+  Direction raw = DIR_NONE;
   if (abs(dx) > JOY_DEADZONE || abs(dy) > JOY_DEADZONE) {
     float angle = atan2((float)dy, (float)dx) * 180.0 / PI; // 90=up(TOP), 0=right(E)
     if (angle < 0) angle += 360;
     int wedge = ((int)round(angle / 45.0)) % 8; // 0=E,1=NE,2=TOP,3=NW,4=W,5=SW,6=S,7=SE
     const Direction WEDGE_TO_DIR[8] = {DIR_E, DIR_NE, DIR_TOP, DIR_NW, DIR_W, DIR_SW, DIR_S, DIR_SE};
-    sector = WEDGE_TO_DIR[wedge];
+    raw = WEDGE_TO_DIR[wedge];
   }
 
+  if (raw != pendingJoySector) {
+    pendingJoySector = raw;
+    pendingJoySince = millis();
+    return; // not settled yet -- could still be spring wobble
+  }
+  if (millis() - pendingJoySince < JOY_SETTLE_MS) return; // settling, not accepted yet
+
+  Direction sector = pendingJoySector;
   if (sector != DIR_NONE && sector != lastJoySector) {
     if (menuOpen) {
       switch (sector) {
-        case DIR_TOP: root = constrain(root + 1, 48, 60); break;
-        case DIR_S:   root = constrain(root - 1, 48, 60); break;
-        case DIR_E:   mode = (mode + 1) % 7; break;
-        case DIR_W:   mode = (mode - 1 + 7) % 7; break;
+        case DIR_TOP: root = constrain(root + ROOT_DIR_SIGN, 48, 60); break;
+        case DIR_S:   root = constrain(root - ROOT_DIR_SIGN, 48, 60); break;
+        case DIR_E:   mode = ((mode + MODE_DIR_SIGN) % 7 + 7) % 7; break;
+        case DIR_W:   mode = ((mode - MODE_DIR_SIGN) % 7 + 7) % 7; break;
         default: break; // diagonals do nothing in the menu
       }
     } else if (sector == DIR_TOP) {
@@ -218,30 +242,61 @@ void noteName(int midiNote, char *out) {
 void updateDisplay() {
   char buf[16];
   display.clearDisplay();
-  display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
-  display.setCursor(0, 0);
 
   if (menuOpen) {
+    display.setTextSize(1);
+    display.setCursor(0, 0);
     noteName(root, buf);
     display.println("Menu");
     display.setCursor(0, 20);
     display.print("Root: "); display.println(buf);
     display.print("Mode: "); display.println(MODE_NAMES[mode]);
   } else {
-    display.println("Play");
-    display.setCursor(0, 20);
+    // Big note name, top-left.
+    display.setTextSize(3);
+    display.setCursor(0, 0);
     if (heldButton >= 0) {
       noteName(root + MODE_INTERVALS[mode][heldButton] + octaveOffset * 12, buf);
-      display.print("Note: "); display.println(buf);
+      display.print(buf);
     } else {
-      display.println("Note: --");
+      display.print("--");
     }
-    display.print("Flavor: ");
-    display.println(activeFlavor < 0 ? "Idle" : FLAVOR_NAMES[activeFlavor]);
-    display.print("Octave: "); display.println(octaveOffset);
+
+    // Flavor name, small subline under the big note.
+    display.setTextSize(1);
+    display.setCursor(0, 34);
+    display.print(activeFlavor < 0 ? "Idle" : FLAVOR_NAMES[activeFlavor]);
+
+    drawOctaveBox();
   }
   display.display();
+}
+
+// "Oct" label plus a boxed column of all five positions (-2..+2), the
+// current one drawn inverted (filled box, black text) instead of just
+// printed differently -- easier to spot at a glance than reading a number.
+void drawOctaveBox() {
+  const int BOX_X = 96, BOX_W = 30, BOX_Y = 10, ROW_H = 10;
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(BOX_X, 0);
+  display.print("Oct");
+  display.drawRect(BOX_X, BOX_Y, BOX_W, ROW_H * 5, SSD1306_WHITE);
+
+  for (int8_t v = -2; v <= 2; v++) {
+    int y = BOX_Y + (2 - v) * ROW_H; // +2 at the top, -2 at the bottom
+    char label[4];
+    if (v == 0) strcpy(label, "0");
+    else sprintf(label, "%+d", v);
+
+    bool current = (v == octaveOffset);
+    if (current) display.fillRect(BOX_X + 1, y + 1, BOX_W - 2, ROW_H - 2, SSD1306_WHITE);
+    display.setTextColor(current ? SSD1306_BLACK : SSD1306_WHITE);
+    display.setCursor(BOX_X + 10, y + 2);
+    display.print(label);
+  }
+  display.setTextColor(SSD1306_WHITE);
 }
 
 // ---- Self-check: pure logic only, no hardware. Compile with -DKORDA_SELFTEST
