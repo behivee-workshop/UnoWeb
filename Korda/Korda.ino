@@ -3,21 +3,27 @@
 //
 // Pins:
 //   D2-D8   7 note buttons (INPUT_PULLUP, active low) -> scale degrees 1-7
-//   D9/D10  rotary encoder CLK/DT
-//   D11     rotary encoder SW (click = next menu screen)
-//   D12/D13 octave down / octave up buttons
+//   D9      octave down button
+//   D10     octave up button
 //   A0      reserved, unused on purpose -- the R4's DAC pin, kept open for
 //           a possible future Mozzi audio-synthesis output
-//   A1/A2   joystick X/Y (spring-return)
+//   A1/A2   joystick X/Y (spring-return) -- dual role, see below
+//   A3      menu button -- toggles between Play and the root/mode menu
 //   A4/A5   OLED (I2C, SSD1306 128x64 @ 0x3C)
 //   Serial1 TX -> DIN MIDI out to synth (D0/D1 UART; RX unused, this
 //           sketch only sends -- DIN<->USB merging lives elsewhere now,
 //           e.g. the R3+MocoLUFA box, not this board)
 //
+// No rotary encoder -- it wasn't reading reliably, so the joystick does
+// double duty instead. In Play, it's the 8-direction flavor selector as
+// before. In the menu (toggled by the A3 button), only the four cardinal
+// pushes mean anything: up/down step the root, left/right step the mode;
+// the four diagonals do nothing there. Velocity is fixed, not adjustable.
+//
 // Always outputs exactly 3 notes (root, note2, note3). Idle (no flavor) is
 // root+5th+octave; pushing a joystick direction swaps note2/note3 for that
-// flavor's pair. Monophonic: one button held at a time. Settings (root,
-// mode, velocity) reset to default every boot, nothing persisted.
+// flavor's pair. Monophonic: one button held at a time. Root and mode
+// reset to default every boot, nothing persisted.
 
 #include <MIDI.h>
 #include <Bounce2.h>
@@ -30,34 +36,19 @@ Adafruit_SSD1306 display(128, 64, &Wire, -1);
 
 // ---- Pins ----
 const uint8_t NOTE_PINS[7] = {2, 3, 4, 5, 6, 7, 8};
-const uint8_t ENC_CLK = 9, ENC_DT = 10, ENC_SW = 11;
-const uint8_t OCT_DOWN_PIN = 12, OCT_UP_PIN = 13;
+const uint8_t OCT_DOWN_PIN = 9, OCT_UP_PIN = 10;
 // A0 deliberately not used for anything -- reserved for a future Mozzi DAC audio output.
 const uint8_t JOY_X_PIN = A1, JOY_Y_PIN = A2;
+const uint8_t MENU_BTN_PIN = A3;
+const uint8_t VELOCITY = 100; // fixed, not adjustable
 
 // Flip these if up/down or left/right come out backwards on your wiring.
 const int8_t JOY_X_SIGN = 1;
 const int8_t JOY_Y_SIGN = 1;
-const int JOY_DEADZONE = 150;        // ADC counts from center before a direction registers
-const long ENCODER_COUNTS_PER_CLICK = 2; // CLK-edge counting fires ~2x per detent on most EC11-style encoders
+const int JOY_DEADZONE = 150; // ADC counts from center before a direction registers
 
 Bounce noteButtons[7];
-Bounce octDownBtn, octUpBtn, encSwBtn;
-
-// Hand-rolled quadrature step detection: PJRC's Encoder library leans on
-// AVR-only direct-port-access macros that don't exist for the Renesas R4 at
-// all (not just an unlisted interrupt pin) -- a dozen lines here beats
-// fighting an incompatible library for a menu knob we only poll each loop.
-uint8_t lastEncClk = HIGH;
-long encCounts = 0;
-
-void pollEncoderPins() {
-  uint8_t clk = digitalRead(ENC_CLK);
-  if (clk != lastEncClk) {
-    encCounts += (digitalRead(ENC_DT) != clk) ? 1 : -1;
-  }
-  lastEncClk = clk;
-}
+Bounce octDownBtn, octUpBtn, menuBtn;
 
 // ---- Music tables ----
 const int8_t MODE_INTERVALS[7][7] = {
@@ -87,19 +78,15 @@ const char *FLAVOR_NAMES[7] = {"Major", "Minor", "Sus2", "Sus4", "Min7", "Add9",
 const int8_t IDLE_OFFSETS[2] = {7, 12}; // root + 5th + octave
 
 // ---- Performance state ----
-int8_t root = 48;          // MIDI note, menu range 48..60
+int8_t root = 48;          // MIDI note, 48..60
 int8_t mode = 0;           // index into MODE_INTERVALS, 0 = Ionian
-uint8_t velocity = 90;      // menu range 50..120
 int8_t octaveOffset = 0;   // -2..+2, steps of 12 semitones
 int8_t heldButton = -1;    // 0..6, or -1 if nothing held
 int8_t activeFlavor = -1;  // index into FLAVOR_OFFSETS, or -1 for idle
+bool menuOpen = false;
 Direction lastJoySector = DIR_NONE;
 int soundingNotes[3] = {-1, -1, -1};
 int joyCenterX = 512, joyCenterY = 512;
-long lastEncCounts = 0;
-
-enum MenuScreen : uint8_t { SCR_PLAY, SCR_ROOT, SCR_MODE, SCR_VELOCITY };
-MenuScreen screen = SCR_PLAY;
 
 void setup() {
 #ifdef KORDA_SELFTEST
@@ -111,10 +98,7 @@ void setup() {
   }
   octDownBtn.attach(OCT_DOWN_PIN, INPUT_PULLUP); octDownBtn.interval(5);
   octUpBtn.attach(OCT_UP_PIN, INPUT_PULLUP);     octUpBtn.interval(5);
-  encSwBtn.attach(ENC_SW, INPUT_PULLUP);         encSwBtn.interval(5);
-  pinMode(ENC_CLK, INPUT_PULLUP);
-  pinMode(ENC_DT, INPUT_PULLUP);
-  lastEncClk = digitalRead(ENC_CLK);
+  menuBtn.attach(MENU_BTN_PIN, INPUT_PULLUP);    menuBtn.interval(5);
 
   MIDIdin.begin(MIDI_CHANNEL_OFF); // we only send, never read
   MIDIdin.turnThruOff();
@@ -127,15 +111,13 @@ void setup() {
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   display.clearDisplay();
   display.display();
-
-  lastEncCounts = encCounts;
 }
 
 void loop() {
   readNoteButtons();
   readOctaveButtons();
+  readMenuButton();
   readJoystick();
-  readEncoderMenu();
   updateOutput();
   updateDisplay();
 }
@@ -156,10 +138,17 @@ void readOctaveButtons() {
   if (octUpBtn.fell())   octaveOffset = min(2, octaveOffset + 1);
 }
 
+void readMenuButton() {
+  menuBtn.update();
+  if (menuBtn.fell()) menuOpen = !menuOpen;
+}
+
 // Classifies the stick into one of 8 compass directions (or DIR_NONE inside
 // the deadzone), then fires on a change of sector -- that's what "push"
 // means here. Holding a sector does nothing twice; releasing to center or
 // sliding straight to a different sector are the only transitions that matter.
+// In the menu, only the four cardinal pushes do anything (root up/down,
+// mode left/right); in Play, all eight pick a flavor as before.
 void readJoystick() {
   int dx = JOY_X_SIGN * (analogRead(JOY_X_PIN) - joyCenterX);
   int dy = JOY_Y_SIGN * (analogRead(JOY_Y_PIN) - joyCenterY);
@@ -174,7 +163,15 @@ void readJoystick() {
   }
 
   if (sector != DIR_NONE && sector != lastJoySector) {
-    if (sector == DIR_TOP) {
+    if (menuOpen) {
+      switch (sector) {
+        case DIR_TOP: root = constrain(root + 1, 48, 60); break;
+        case DIR_S:   root = constrain(root - 1, 48, 60); break;
+        case DIR_E:   mode = (mode + 1) % 7; break;
+        case DIR_W:   mode = (mode - 1 + 7) % 7; break;
+        default: break; // diagonals do nothing in the menu
+      }
+    } else if (sector == DIR_TOP) {
       activeFlavor = -1; // always a reset, not a flavor -- leans into the spring instead of fighting it
     } else {
       int8_t idx = sector - DIR_W; // DIR_W..DIR_SE map to 0..6, matching FLAVOR_OFFSETS
@@ -182,24 +179,6 @@ void readJoystick() {
     }
   }
   lastJoySector = sector;
-}
-
-void readEncoderMenu() {
-  pollEncoderPins();
-  long delta = (encCounts - lastEncCounts) / ENCODER_COUNTS_PER_CLICK;
-  if (delta != 0) {
-    lastEncCounts += delta * ENCODER_COUNTS_PER_CLICK; // keep sub-click remainder for next time
-    switch (screen) {
-      case SCR_ROOT:     root = constrain(root + delta, 48, 60); break;
-      case SCR_MODE:      mode = ((mode + delta) % 7 + 7) % 7; break;
-      case SCR_VELOCITY:  velocity = constrain((long)velocity + delta, 50, 120); break;
-      case SCR_PLAY:      break; // nothing to rotate
-    }
-  }
-  encSwBtn.update();
-  if (encSwBtn.fell()) {
-    screen = (MenuScreen)((screen + 1) % 4);
-  }
 }
 
 // The one place that decides what should be sounding right now, and reconciles
@@ -221,7 +200,7 @@ void updateOutput() {
   }
   for (uint8_t i = 0; i < 3; i++) {
     int note = target[i];
-    if (note >= 0 && !contains(soundingNotes, note)) MIDIdin.sendNoteOn(note, velocity, 1);
+    if (note >= 0 && !contains(soundingNotes, note)) MIDIdin.sendNoteOn(note, VELOCITY, 1);
   }
   memcpy(soundingNotes, target, sizeof(target));
 }
@@ -243,37 +222,24 @@ void updateDisplay() {
   display.setTextColor(SSD1306_WHITE);
   display.setCursor(0, 0);
 
-  switch (screen) {
-    case SCR_PLAY: {
-      display.println("Play");
-      display.setCursor(0, 20);
-      if (heldButton >= 0) {
-        noteName(root + MODE_INTERVALS[mode][heldButton] + octaveOffset * 12, buf);
-        display.print("Note: "); display.println(buf);
-      } else {
-        display.println("Note: --");
-      }
-      display.print("Flavor: ");
-      display.println(activeFlavor < 0 ? "Idle" : FLAVOR_NAMES[activeFlavor]);
-      display.print("Octave: "); display.println(octaveOffset);
-      break;
+  if (menuOpen) {
+    noteName(root, buf);
+    display.println("Menu");
+    display.setCursor(0, 20);
+    display.print("Root: "); display.println(buf);
+    display.print("Mode: "); display.println(MODE_NAMES[mode]);
+  } else {
+    display.println("Play");
+    display.setCursor(0, 20);
+    if (heldButton >= 0) {
+      noteName(root + MODE_INTERVALS[mode][heldButton] + octaveOffset * 12, buf);
+      display.print("Note: "); display.println(buf);
+    } else {
+      display.println("Note: --");
     }
-    case SCR_ROOT:
-      noteName(root, buf);
-      display.println("Set Root");
-      display.setCursor(0, 20);
-      display.println(buf);
-      break;
-    case SCR_MODE:
-      display.println("Set Mode");
-      display.setCursor(0, 20);
-      display.println(MODE_NAMES[mode]);
-      break;
-    case SCR_VELOCITY:
-      display.println("Set Velocity");
-      display.setCursor(0, 20);
-      display.println(velocity);
-      break;
+    display.print("Flavor: ");
+    display.println(activeFlavor < 0 ? "Idle" : FLAVOR_NAMES[activeFlavor]);
+    display.print("Octave: "); display.println(octaveOffset);
   }
   display.display();
 }
