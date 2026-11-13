@@ -30,6 +30,11 @@ apps sharing one clock, virtual piano, MIDI device manager, and visual system.
 ## Loop
 
 - Four independent MIDI loop tracks with play/pause, overdub, mute, and clear.
+
+### Voltage
+
+- A 16-step voltage sequencer: every step independently tunes one octave below or above the selected C3–C5 root note.
+- Per-step mute switches and current-step indicator lights; sends MIDI on channel 1.
 - With the metronome running, first recording arms on beat 1 and closes at the
   end of the current bar rather than abruptly mid-bar.
 - Shows live and completed loop length in bars.

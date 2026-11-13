@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="theme-color" content="#080d14">
+<title>Keybench — Voltage</title>
+<link rel="stylesheet" href="../assets/shared.css">
+<link rel="stylesheet" href="voltage.css">
+</head>
+<body>
+<div class="chassis">
+  <div class="chassis-head">
+    <a class="wordmark" href="../index.html"><b>Keybench</b><span>Voltage</span></a>
+    <div class="nav-controls">
+      <div class="metronome">
+        <button class="tbtn-sm" id="metroPlay" aria-pressed="false" aria-label="Metronome"></button>
+        <button class="tbtn-sm" id="bpmDown" aria-label="Decrease BPM"></button>
+        <span class="bpm-readout" id="bpmReadout">100</span>
+        <button class="tbtn-sm" id="bpmUp" aria-label="Increase BPM"></button>
+        <span class="beat-dot" id="beatDot"></span>
+      </div>
+      <button class="btn-pill quick-connect" id="quickConnectBtn"></button>
+      <button class="gear-btn" id="settingsBtn" aria-pressed="false" aria-expanded="false" aria-controls="panelDevice" aria-label="MIDI settings">⚙</button>
+    </div>
+  </div>
+
+  <div class="screen">
+    <section class="panel active" id="panelMain" role="tabpanel">
+      <div class="voltage-toolbar">
+        <button class="tbtn primary" id="playBtn" aria-label="Play"></button>
+        <button class="tbtn" id="stopBtn" aria-label="Stop"></button>
+        <label class="root-note" for="rootNote">Root note <select id="rootNote" aria-label="Root note, C3 to C5"></select></label>
+        <span class="voltage-range"><span id="minPitch">C3</span> <span>← pitch range →</span> <span id="maxPitch">C5</span></span>
+      </div>
+      <p class="voltage-help">Sixteen steps. Center is the root note; each slider reaches one octave down or up. Mute removes that step from playback.</p>
+      <div class="voltage-sequencer" id="voltageSequencer" aria-label="16-step voltage sequencer"></div>
+    </section>
+
+    <section class="panel settings-drawer" id="panelDevice" role="dialog" aria-modal="true" aria-label="MIDI settings">
+      <div class="settings-scroll">
+        <div class="settings-section"><span class="settings-note" id="connectStatus">Not connected — connect an output to hear Voltage.</span></div>
+        <div class="settings-section"><h3>Input — the connected controller</h3><div class="device-list" role="radiogroup" aria-label="MIDI input device" id="inputList"></div></div>
+        <div class="settings-section"><h3>Output — where Voltage sends</h3><div class="device-list" role="radiogroup" aria-label="MIDI output device" id="outputList"></div></div>
+        <div class="settings-foot"><button class="btn-pill" id="rescanBtn">Rescan devices</button><span class="settings-note">Use Chrome or Edge over HTTPS or localhost for Web MIDI.</span></div>
+      </div>
+    </section>
+  </div>
+</div>
+<script src="../assets/shared.js"></script>
+<script src="voltage.js"></script>
+</body>
+</html>

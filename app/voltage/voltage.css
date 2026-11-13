@@ -1,0 +1,21 @@
+.voltage-toolbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:8px; border:1px solid var(--border); border-radius:12px; background:rgba(7,13,20,.46); }
+.voltage-toolbar .tbtn { width:38px; height:38px; border:1px solid var(--border); border-radius:9px; background:var(--surface-raised); color:var(--text); display:grid; place-items:center; }
+.voltage-toolbar .tbtn.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+.root-note { display:flex; align-items:center; gap:8px; margin-left:4px; color:var(--text-muted); font-size:12px; }
+.root-note select { min-height:38px; border:1px solid var(--border); border-radius:8px; padding:0 10px; background:var(--surface-raised); color:var(--text); font:700 13px var(--font-mono); }
+.voltage-range { margin-left:auto; color:var(--text-muted); font:12px var(--font-mono); }
+.voltage-range span { margin-inline:8px; color:var(--accent); }
+.voltage-help { margin:0; color:var(--text-muted); font-size:13px; }
+.voltage-sequencer { display:grid; grid-template-columns:repeat(16, minmax(42px, 1fr)); gap:7px; flex:1; min-height:300px; overflow-x:auto; padding:12px 2px 2px; }
+.voltage-step { min-width:42px; display:grid; grid-template-rows:24px 1fr auto auto; justify-items:center; gap:9px; padding:8px 4px; border-left:1px solid var(--border); }
+.voltage-step:last-child { border-right:1px solid var(--border); }
+.step-light { width:12px; height:12px; align-self:center; border-radius:50%; background:#152231; border:1px solid var(--border-strong); box-shadow:inset 0 1px 2px rgba(0,0,0,.7); }
+.voltage-step.current .step-light { background:var(--t3); border-color:#ffe3a7; box-shadow:inset 0 1px 1px rgba(255,255,255,.45); }
+.pitch-slider { writing-mode:vertical-lr; direction:rtl; width:28px; height:min(42vh, 310px); min-height:190px; accent-color:var(--t3); cursor:pointer; }
+.step-note, .step-number { font:11px var(--font-mono); font-variant-numeric:tabular-nums; }
+.step-note { color:var(--text); font-weight:700; }
+.step-number { color:var(--text-muted); }
+.step-mute { width:30px; height:28px; border:1px solid var(--border); border-radius:7px; background:var(--surface-raised); color:var(--text-muted); font:700 11px var(--font-mono); }
+.step-mute[aria-pressed="true"] { background:var(--mute-active); border-color:var(--mute-active); color:#fff; }
+.voltage-step.muted { opacity:.56; }
+@media (max-width:600px) { .voltage-range { width:100%; margin-left:4px; } .voltage-sequencer { grid-template-columns:repeat(16, 52px); } .pitch-slider { height:230px; } .step-mute { width:36px; height:36px; } }

@@ -14,7 +14,7 @@
     text-transform:uppercase; display:block;
   }
   .launcher-head span { color:var(--text-muted); font-size:13px; }
-  .launcher-cards { display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; }
+  .launcher-cards { display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; }
   @media (max-width:640px) { .launcher-cards { grid-template-columns:1fr; } }
   .launcher-card {
     display:flex; flex-direction:column; gap:8px; text-align:left; text-decoration:none; color:var(--text);
@@ -31,7 +31,7 @@
 <div class="launcher">
   <div class="launcher-head">
     <b>Keybench</b>
-    <span>three small MIDI apps, one shared keyboard and device connection</span>
+    <span>four small MIDI apps, one shared MIDI connection</span>
   </div>
   <div class="launcher-cards">
     <a class="launcher-card" href="live/" style="--track-color:var(--t1)">
@@ -48,6 +48,11 @@
       <span class="dot"></span>
       <b>Loop</b>
       <p>A Boss RC-5-style live looper for MIDI — per-track play/pause, overdub, and clear.</p>
+    </a>
+    <a class="launcher-card" href="voltage/" style="--track-color:var(--t3)">
+      <span class="dot"></span>
+      <b>Voltage</b>
+      <p>A 16-step voltage sequencer: tune every step one octave either side of its root note.</p>
     </a>
   </div>
 </div>
