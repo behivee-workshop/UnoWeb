@@ -33,7 +33,7 @@ apps sharing one clock, virtual piano, MIDI device manager, and visual system.
 
 ### Voltage
 
-- A 16-step voltage sequencer: every step independently tunes one octave below or above the selected C3–C5 root note.
+- A 16-step voltage sequencer: every step independently tunes one octave below or above the selected C3–C5 key, with Ionian through Locrian mode selection and scale-degree progression buttons.
 - Per-step mute switches and current-step indicator lights; sends MIDI on channel 1.
 - With the metronome running, first recording arms on beat 1 and closes at the
   end of the current bar rather than abruptly mid-bar.

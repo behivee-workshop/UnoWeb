@@ -5,10 +5,15 @@ const html = fs.readFileSync("app/voltage/index.html", "utf8");
 const js = fs.readFileSync("app/voltage/voltage.js", "utf8");
 
 assert.match(html, /id="rootNote"/);
+assert.match(html, /id="modeSelect"/);
+assert.match(html, /data-degree="7"/);
+assert.match(html, /id="degreeReadout"/);
 assert.match(js, /length:16/);
 assert.match(js, /rootMidi - 12/);
 assert.match(js, /rootMidi \+ 12/);
 assert.match(js, /step\.muted/);
 assert.match(js, /currentStep/);
+assert.match(js, /const MODES/);
+assert.match(js, /function applyDegree/);
 
 console.log("Voltage has 16 pitch steps, octave bounds, mutes, and a current-step light.");

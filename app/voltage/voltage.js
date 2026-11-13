@@ -1,8 +1,12 @@
 (function(){
   "use strict";
   const { iconSvg, midiName, createDeviceManager, createMetronome } = window.KB;
+  const MODES = {
+    ionian:[0, 2, 4, 5, 7, 9, 11], dorian:[0, 2, 3, 5, 7, 9, 10], phrygian:[0, 1, 3, 5, 7, 8, 10],
+    lydian:[0, 2, 4, 6, 7, 9, 11], mixolydian:[0, 2, 4, 5, 7, 9, 10], aeolian:[0, 2, 3, 5, 7, 8, 10], locrian:[0, 1, 3, 5, 6, 8, 10],
+  };
   const STEPS = Array.from({ length:16 }, () => ({ midi:60, muted:false }));
-  let rootMidi = 60, currentStep = -1, playing = false, timer = null, deviceManager;
+  let keyMidi = 60, rootMidi = 60, selectedDegree = 1, currentStep = -1, playing = false, timer = null, deviceManager;
 
   const metronome = createMetronome({
     playBtn: document.getElementById('metroPlay'), bpmDown: document.getElementById('bpmDown'),
@@ -20,17 +24,33 @@
   window.addEventListener('keydown', e => { if (e.key === 'Escape' && onDevice) settingsBtn.click(); });
 
   const rootSelect = document.getElementById('rootNote');
+  const modeSelect = document.getElementById('modeSelect');
+  const degreeCtl = document.getElementById('degreeCtl');
+  const degreeReadout = document.getElementById('degreeReadout');
   for (let midi = 48; midi <= 72; midi++) {
     const option = document.createElement('option'); option.value = midi; option.textContent = midiName(midi); rootSelect.appendChild(option);
   }
-  rootSelect.value = rootMidi;
-  function setRootMidi(midi){
-    rootMidi = midi; rootSelect.value = rootMidi;
+  rootSelect.value = keyMidi;
+  function setRootMidi(midi, resetSteps = false){
+    const delta = midi - rootMidi;
+    rootMidi = midi;
     document.getElementById('minPitch').textContent = midiName(rootMidi - 12);
     document.getElementById('maxPitch').textContent = midiName(rootMidi + 12);
-    STEPS.forEach(step => { step.midi = rootMidi; }); renderSteps();
+    degreeReadout.textContent = `${selectedDegree} · ${midiName(rootMidi)}`;
+    STEPS.forEach(step => { step.midi = resetSteps ? rootMidi : step.midi + delta; }); renderSteps();
   }
-  rootSelect.addEventListener('change', () => setRootMidi(Number(rootSelect.value)));
+  function applyDegree(degree){
+    selectedDegree = degree;
+    degreeCtl.querySelectorAll('button').forEach(button => button.setAttribute('aria-pressed', String(Number(button.dataset.degree) === degree)));
+    setRootMidi(keyMidi + MODES[modeSelect.value][degree - 1]);
+  }
+  rootSelect.addEventListener('change', () => {
+    keyMidi = Number(rootSelect.value); selectedDegree = 1;
+    degreeCtl.querySelectorAll('button').forEach(button => button.setAttribute('aria-pressed', String(Number(button.dataset.degree) === 1)));
+    setRootMidi(keyMidi, true);
+  });
+  modeSelect.addEventListener('change', () => applyDegree(selectedDegree));
+  degreeCtl.querySelectorAll('button').forEach(button => button.addEventListener('click', () => applyDegree(Number(button.dataset.degree))));
 
   const sequencer = document.getElementById('voltageSequencer');
   function renderSteps(){
@@ -66,5 +86,5 @@
     els: { quickConnectBtn:document.getElementById('quickConnectBtn'), statusText:document.getElementById('connectStatus'), rescanBtn:document.getElementById('rescanBtn'), inputList:document.getElementById('inputList'), outputList:document.getElementById('outputList') },
     onRealNoteOn: () => {}, onRealNoteOff: () => {},
   });
-  setRootMidi(rootMidi);
+  setRootMidi(rootMidi, true);
 })();

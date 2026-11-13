@@ -30,10 +30,19 @@
       <div class="voltage-toolbar">
         <button class="tbtn primary" id="playBtn" aria-label="Play"></button>
         <button class="tbtn" id="stopBtn" aria-label="Stop"></button>
-        <label class="root-note" for="rootNote">Root note <select id="rootNote" aria-label="Root note, C3 to C5"></select></label>
+        <label class="root-note" for="rootNote">Key <select id="rootNote" aria-label="Key, C3 to C5"></select></label>
+        <label class="root-note" for="modeSelect">Mode
+          <select id="modeSelect">
+            <option value="ionian">Ionian</option><option value="dorian">Dorian</option><option value="phrygian">Phrygian</option>
+            <option value="lydian">Lydian</option><option value="mixolydian">Mixolydian</option><option value="aeolian">Aeolian</option><option value="locrian">Locrian</option>
+          </select>
+        </label>
+        <div class="progression" id="degreeCtl" role="group" aria-label="Scale degree">
+          <span>degree</span><button data-degree="1" aria-pressed="true">1</button><button data-degree="2">2</button><button data-degree="3">3</button><button data-degree="4">4</button><button data-degree="5">5</button><button data-degree="6">6</button><button data-degree="7">7</button><output id="degreeReadout" aria-live="polite">1 · C4</output>
+        </div>
         <span class="voltage-range"><span id="minPitch">C3</span> <span>← pitch range →</span> <span id="maxPitch">C5</span></span>
       </div>
-      <p class="voltage-help">Sixteen steps. Center is the root note; each slider reaches one octave down or up. Mute removes that step from playback.</p>
+      <p class="voltage-help">Sixteen steps. Center is the selected scale degree; each slider reaches one octave down or up. Mute removes that step from playback.</p>
       <div class="voltage-sequencer" id="voltageSequencer" aria-label="16-step voltage sequencer"></div>
     </section>
 

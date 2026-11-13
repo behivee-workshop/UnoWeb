@@ -9,6 +9,7 @@ window.KB = (function(){
     pause: '<rect x="14" y="3" width="5" height="18" rx="1"/><rect x="5" y="3" width="5" height="18" rx="1"/>',
     square: '<rect width="18" height="18" x="3" y="3" rx="2"/>',
     circle: '<circle cx="12" cy="12" r="10"/>',
+    metronome: '<path d="m14.5 8.5-5 5"/><path d="M20 22H4"/><path d="m6.4 12.7 3.1-9.8h5l3.1 9.8a6 6 0 0 1-11.2 0Z"/><path d="M12 2v5"/>',
     minus: '<path d="M5 12h14"/>',
     plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
     volumeX: '<path d="M11 4.702a.7.7 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.7.7 0 0 0 11 19.298z"/><path d="m16.5 14.5 5-5"/><path d="m16.5 9.5 5 5"/>',
@@ -265,13 +266,13 @@ window.KB = (function(){
     function start(){
       if (running) return;
       running = true; beat = 0; els.playBtn.setAttribute('aria-pressed', 'true');
-      els.playBtn.innerHTML = iconSvg('pause');
+      els.playBtn.setAttribute('aria-label', 'Stop metronome');
       tick(); restart();
     }
     function stop(){
       running = false; clearInterval(timer);
       els.playBtn.setAttribute('aria-pressed', 'false');
-      els.playBtn.innerHTML = iconSvg('play', 'play');
+      els.playBtn.setAttribute('aria-label', 'Start metronome');
     }
     function tapTempo(){
       const now = performance.now();
@@ -282,7 +283,8 @@ window.KB = (function(){
       const intervals = tapTimes.slice(1).map((time, i) => time - tapTimes[i]);
       setBpm(Math.round(60000 / (intervals.reduce((sum, value) => sum + value, 0) / intervals.length)));
     }
-    els.playBtn.innerHTML = iconSvg('play', 'play');
+    els.playBtn.innerHTML = iconSvg('metronome');
+    els.playBtn.setAttribute('aria-label', 'Start metronome');
     els.playBtn.addEventListener('click', () => running ? stop() : start());
     window.addEventListener('keydown', ev => {
       if (ev.defaultPrevented || ev.ctrlKey || ev.metaKey || ev.altKey || ev.repeat || ev.key.toLowerCase() !== 'k') return;
